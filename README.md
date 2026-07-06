@@ -88,13 +88,15 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 
 ## 🗺️ Roadmapa
 
-**Faza 1 (✅ ten commit)** — grywalne MVP: Fruktejo, Vulpo, 6 zadań
+**Faza 1 (✅)** — grywalne MVP: Fruktejo, Vulpo, 6 zadań
 (pomo/banano/piro + ruĝa/flava/verda), gwiazdki, Vortaro, TTS, offline PWA.
 
-**Faza 2 — dźwięk i wybór stref**
-- nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w `zones.js`)
-- mapa wyspy Esperantio jako ekran wyboru stref
-- strefa Vilaĝo 🏡 (powitania, przedmioty domowe) i Arbaro 🌳 (zwierzęta, czasowniki ruchu — obiekty *animowane*, np. „Trovu la saltantan kuniklon")
+**Faza 2 (✅ w większości)** — wybór stref i nowe światy
+- ✅ mapa wyspy Esperantio jako ekran wyboru stref (odblokowywanie po kolei)
+- ✅ strefa Vilaĝo 🏡 z misiem Urso (dom, jedzenie, granda/malgranda przez skalę obiektów)
+- ✅ strefa Arbaro 🌳 z papugą Papago (zwierzęta, czasowniki ruchu — obiekty *animowane*: „Tuŝu la saltantan beston!")
+- ✅ zapis postępu per strefa (gwiazdki, ukończenie)
+- ⬜ nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w `zones.js`)
 
 **Faza 3 — głębia mechanik: słowa jako umiejętności**
 - zebrane słówka odblokowują akcje w świecie (akvo → podlewanie, ruĝa → czerwone drzwi)

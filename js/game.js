@@ -8,11 +8,16 @@ const SAVE_KEY = "esperanta-aventuro-save-v1";
 const el = (id) => document.getElementById(id);
 
 function loadSave() {
+  let save;
   try {
-    return JSON.parse(localStorage.getItem(SAVE_KEY)) ?? { stars: 0, words: [] };
+    save = JSON.parse(localStorage.getItem(SAVE_KEY)) ?? {};
   } catch {
-    return { stars: 0, words: [] };
+    save = {};
   }
+  save.stars ??= 0;
+  save.words ??= [];
+  save.zones ??= {};
+  return save;
 }
 
 function persist(save) {
@@ -33,28 +38,37 @@ function randomOf(arr) {
 }
 
 export class Game {
-  constructor(zone) {
-    this.zone = zone;
+  constructor() {
     this.save = loadSave();
-    this.taskIndex = 0;
-    this.locked = false;
-    this.sessionStars = 0;
-  }
-
-  start() {
-    el("npc").textContent = this.zone.npc.emoji;
+    this.zone = null;
+    this.active = false;
+    this.onWin = null; // ustawiane przez main.js (nawigacja)
     this.updateStars();
     this.renderVortaro();
-    this.showTask();
+  }
+
+  loadZone(zone) {
+    this.zone = zone;
+    this.taskIndex = 0;
+    this.sessionStars = 0;
+    this.locked = false;
+    this.active = true;
+    el("npc").textContent = zone.npc.emoji;
+  }
+
+  // Wywoływane przy wyjściu do mapy — wyłącza opóźnione przejścia zadań.
+  deactivate() {
+    this.active = false;
   }
 
   get task() {
-    return this.zone.tasks[this.taskIndex];
+    return this.zone?.tasks[this.taskIndex];
   }
 
   showTask() {
+    if (!this.active) return;
     const task = this.task;
-    if (!task) return this.showWin();
+    if (!task) return this.finishZone();
 
     this.locked = false;
     el("instruction").textContent = task.instruction;
@@ -65,8 +79,21 @@ export class Game {
     for (const obj of shuffle(task.objects)) {
       const btn = document.createElement("button");
       btn.className = "object-button";
-      btn.textContent = obj.emoji;
       btn.dataset.id = obj.id;
+
+      const emoji = document.createElement("span");
+      emoji.className = "obj-emoji" + (obj.anim ? ` anim-${obj.anim}` : "");
+      emoji.textContent = obj.emoji;
+      if (obj.scale) emoji.style.fontSize = `${obj.scale}em`;
+      btn.appendChild(emoji);
+
+      if (obj.badge) {
+        const badge = document.createElement("span");
+        badge.className = "obj-badge";
+        badge.textContent = obj.badge;
+        btn.appendChild(badge);
+      }
+
       btn.addEventListener("pointerdown", () => this.onTap(btn, obj));
       box.appendChild(btn);
     }
@@ -75,7 +102,7 @@ export class Game {
   }
 
   onTap(btn, obj) {
-    if (this.locked) return;
+    if (this.locked || !this.active) return;
     playTap();
     if (obj.id === this.task.correct) {
       this.onCorrect(btn);
@@ -106,7 +133,6 @@ export class Game {
   }
 
   onWrong(btn) {
-    if (this.locked) return;
     this.locked = true;
     btn.classList.add("wrong");
     el("npc").classList.add("thinking");
@@ -118,6 +144,7 @@ export class Game {
 
     // Łagodna próba ponowna — ta sama instrukcja wraca, zero kary.
     setTimeout(() => {
+      if (!this.active) return;
       btn.classList.remove("wrong");
       el("npc").classList.remove("thinking");
       el("instruction").textContent = this.task.instruction;
@@ -165,20 +192,26 @@ export class Game {
     }
   }
 
-  showWin() {
-    el("game-screen").classList.add("hidden");
-    el("win-screen").classList.remove("hidden");
+  finishZone() {
+    if (!this.active) return;
+    const prev = this.save.zones[this.zone.id] ?? { done: false, stars: 0 };
+    this.save.zones[this.zone.id] = {
+      done: true,
+      stars: Math.max(prev.stars, this.sessionStars),
+    };
+    persist(this.save);
+
     el("win-text").textContent = this.zone.winText;
     el("win-stars").textContent = "⭐".repeat(Math.min(this.sessionStars, 10));
     playSuccess();
     speak(`Bonege! ${this.zone.winText}`);
+    this.onWin?.();
   }
 
   replay() {
     this.taskIndex = 0;
     this.sessionStars = 0;
-    el("win-screen").classList.add("hidden");
-    el("game-screen").classList.remove("hidden");
+    this.active = true;
     this.showTask();
   }
 

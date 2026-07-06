@@ -1,5 +1,5 @@
 // Service worker — gra działa w pełni offline po pierwszym otwarciu.
-const CACHE = "esperanta-aventuro-v1";
+const CACHE = "esperanta-aventuro-v2";
 const ASSETS = [
   ".",
   "index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "css/style.css",
   "js/main.js",
   "js/game.js",
+  "js/map.js",
   "js/audio.js",
   "js/data/zones.js",
   "assets/icon.svg",

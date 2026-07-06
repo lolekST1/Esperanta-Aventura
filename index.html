@@ -11,6 +11,13 @@
 </head>
 <body>
 
+  <!-- Wspólny pasek górny (mapa / gra / wygrana) -->
+  <header id="topbar" class="hidden">
+    <button id="btn-map" class="icon-button hidden" aria-label="mapo">🏝️</button>
+    <div id="star-counter" aria-label="steloj">⭐ <span id="star-count">0</span></div>
+    <button id="btn-vortaro" class="icon-button" aria-label="vortaro">📖</button>
+  </header>
+
   <!-- Ekran startowy -->
   <section id="start-screen" class="screen">
     <div class="start-inner">
@@ -20,13 +27,14 @@
     </div>
   </section>
 
+  <!-- Mapa wyspy Esperantio -->
+  <section id="map-screen" class="screen hidden">
+    <h2 class="map-title">🏝️ Esperantio</h2>
+    <div id="zone-list" class="zone-list"></div>
+  </section>
+
   <!-- Główny ekran gry -->
   <section id="game-screen" class="screen hidden">
-    <header id="topbar">
-      <div id="star-counter" aria-label="steloj">⭐ <span id="star-count">0</span></div>
-      <button id="btn-vortaro" class="icon-button" aria-label="vortaro">📖</button>
-    </header>
-
     <div id="stage">
       <div id="npc-area">
         <div id="npc" class="npc">🦊</div>
@@ -52,7 +60,10 @@
       <h2 id="win-title">Bonege!</h2>
       <p id="win-text">Vi trovis ĉiujn fruktojn!</p>
       <div id="win-stars"></div>
-      <button id="btn-replay" class="big-button">🔄 Ludi denove</button>
+      <div class="win-buttons">
+        <button id="btn-map-win" class="big-button">🏝️ Mapo</button>
+        <button id="btn-replay" class="big-button secondary">🔄 Denove</button>
+      </div>
     </div>
   </section>
 

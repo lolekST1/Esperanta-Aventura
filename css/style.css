@@ -74,13 +74,32 @@ h1, h2 {
   box-shadow: 0 2px 0 #d97e00;
 }
 
-/* ---------- Pasek górny ---------- */
+.big-button.secondary {
+  background: #4dabf7;
+  box-shadow: 0 6px 0 #1c7ed6;
+}
+
+.big-button.secondary:active { box-shadow: 0 2px 0 #1c7ed6; }
+
+.win-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+/* ---------- Pasek górny (wspólny dla mapy i gry) ---------- */
 
 #topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
+  z-index: 5;
 }
 
 #star-counter {
@@ -102,7 +121,69 @@ h1, h2 {
   cursor: pointer;
 }
 
+/* ---------- Mapa wyspy ---------- */
+
+#map-screen {
+  padding: 96px 20px 24px;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.map-title {
+  margin: 0 0 20px;
+  font-size: clamp(30px, 8vw, 44px);
+}
+
+.zone-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(92vw, 440px);
+}
+
+.zone-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: none;
+  border-radius: 28px;
+  background: #ffffffd0;
+  box-shadow: 0 6px 0 #00000018;
+  padding: 18px 22px;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 92px;
+  transition: transform 0.15s;
+}
+
+.zone-card:active { transform: scale(0.96); }
+
+.zone-card .zone-emoji { font-size: 52px; }
+
+.zone-card .zone-name {
+  flex: 1;
+  text-align: left;
+  font-size: clamp(22px, 6vw, 30px);
+  color: #2c5e1a;
+  font-weight: bold;
+}
+
+.zone-card .zone-status {
+  font-size: clamp(20px, 5vw, 26px);
+  color: #b8860b;
+  font-weight: bold;
+}
+
+.zone-card.locked {
+  filter: grayscale(0.9);
+  opacity: 0.6;
+}
+
+.zone-card.wobble { animation: wobble 0.5s ease; }
+
 /* ---------- Scena ---------- */
+
+#game-screen { padding-top: 88px; }
 
 #stage {
   flex: 1;
@@ -174,6 +255,7 @@ h1, h2 {
 }
 
 .object-button {
+  position: relative;
   font-size: clamp(64px, 22vw, 130px);
   width: clamp(96px, 28vw, 170px);
   height: clamp(96px, 28vw, 170px);
@@ -191,6 +273,17 @@ h1, h2 {
 .object-button:active { transform: scale(0.92); }
 .object-button.correct { animation: pop 0.6s ease; background: #c9f7c9; }
 .object-button.wrong { animation: wobble 0.5s ease; }
+
+.obj-emoji { display: inline-block; }
+.obj-emoji.anim-jump { animation: hop 1s ease-in-out infinite; }
+.obj-emoji.anim-fly { animation: floaty 1.8s ease-in-out infinite; }
+
+.obj-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.35em;
+}
 
 /* ---------- Nagroda ---------- */
 
@@ -287,4 +380,14 @@ h1, h2 {
 
 @keyframes fall {
   to { transform: translateY(110vh) rotate(360deg); opacity: 0.7; }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-22px); }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-16px) rotate(6deg); }
 }

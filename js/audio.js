@@ -12,23 +12,65 @@
 let voice = null;
 let ctx = null;
 
+const VOICE_KEY = "esperanta-aventuro-voice";
 const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
 
+function allVoices() {
+  return window.speechSynthesis?.getVoices?.() ?? [];
+}
+
+function voiceId(v) {
+  return v.voiceURI ?? v.name;
+}
+
+// Głosy lokalne są niezawodne; sieciowe potrafią milczeć bez błędu.
+function preferLocal(list) {
+  return list.find((v) => v.localService !== false) ?? list[0];
+}
+
 function pickVoice() {
-  const voices = window.speechSynthesis?.getVoices?.() ?? [];
-  const byName = voices.find((v) => /esperant/i.test(v.name ?? ""));
-  if (byName) {
-    voice = byName;
-    return;
-  }
-  for (const lang of VOICE_LANG_PREFS) {
-    const v = voices.find((v) => v.lang?.toLowerCase().replace("_", "-").startsWith(lang));
+  const voices = allVoices();
+
+  // Głos wybrany ręcznie przez rodzica (ekran ⚙️) wygrywa ze wszystkim.
+  const saved = localStorage.getItem(VOICE_KEY);
+  if (saved) {
+    const v = voices.find((v) => voiceId(v) === saved);
     if (v) {
       voice = v;
       return;
     }
   }
-  voice = voices.find((v) => !v.lang?.toLowerCase().startsWith("en")) || voices[0] || null;
+
+  const byName = voices.filter((v) => /esperant/i.test(v.name ?? ""));
+  if (byName.length) {
+    voice = preferLocal(byName);
+    return;
+  }
+  for (const lang of VOICE_LANG_PREFS) {
+    const m = voices.filter((v) => v.lang?.toLowerCase().replace("_", "-").startsWith(lang));
+    if (m.length) {
+      voice = preferLocal(m);
+      return;
+    }
+  }
+  const nonEn = voices.filter((v) => !v.lang?.toLowerCase().startsWith("en"));
+  voice = preferLocal(nonEn.length ? nonEn : voices) ?? null;
+}
+
+// Dla ekranu wyboru głosu (⚙️ na mapie).
+export function getVoiceChoices() {
+  pickVoice();
+  return {
+    voices: allVoices(),
+    current: voice,
+    saved: localStorage.getItem(VOICE_KEY),
+  };
+}
+
+export function setVoiceOverride(id) {
+  if (id) localStorage.setItem(VOICE_KEY, id);
+  else localStorage.removeItem(VOICE_KEY);
+  pickVoice();
 }
 
 function effectiveLang() {
@@ -120,20 +162,60 @@ export function speak(text, profile = NARRATOR) {
       return;
     }
 
+    const synth = window.speechSynthesis;
     // Lista głosów potrafi załadować się po starcie — dobieraj do skutku.
     if (!voice) pickVoice();
 
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(prepareText(text));
-    if (voice) u.voice = voice;
-    u.lang = voice?.lang ?? "eo";
-    u.rate = profile.rate ?? NARRATOR.rate;
-    u.pitch = profile.pitch ?? NARRATOR.pitch;
-    u.onend = finish;
-    u.onerror = finish;
+    let started = false;
+    let retried = false;
+
+    const makeUtterance = (t, v, lang) => {
+      const u = new SpeechSynthesisUtterance(t);
+      if (v) u.voice = v;
+      u.lang = lang;
+      u.rate = profile.rate ?? NARRATOR.rate;
+      u.pitch = profile.pitch ?? NARRATOR.pitch;
+      u.onstart = () => {
+        started = true;
+      };
+      u.onend = finish;
+      return u;
+    };
+
+    // Plan B: wybrany głos milczy (uszkodzony/sieciowy) — mów domyślnym
+    // głosem systemu, z transliteracją dopasowaną do języka systemu.
+    const retry = () => {
+      if (retried || done) return;
+      retried = true;
+      synth.cancel();
+      const sysLang = (navigator.language || "en").toLowerCase();
+      const t = sysLang.startsWith("pl")
+        ? toPolish(text)
+        : sysLang.startsWith("en")
+          ? toEnglishPhonetic(text)
+          : text;
+      const u2 = makeUtterance(t, null, navigator.language || "en-US");
+      u2.onerror = finish;
+      setTimeout(() => synth.speak(u2), 60);
+    };
+
+    const u = makeUtterance(prepareText(text), voice, voice?.lang ?? "eo");
+    u.onerror = (e) => {
+      // Nasze własne cancel() (wyjście do mapy) nie jest awarią.
+      if (e?.error === "canceled" || e?.error === "interrupted") finish();
+      else retry();
+    };
+
+    synth.cancel();
+    // Chrome potrafi zgubić utterance wysłane tuż po cancel() —
+    // krótka przerwa omija ten bug.
+    setTimeout(() => synth.speak(u), 60);
+    setTimeout(() => {
+      if (!started && !done) retry();
+    }, 2000);
+
     // Awaria TTS nigdy nie może zawiesić gry.
-    setTimeout(finish, 1200 + text.length * 130);
-    window.speechSynthesis.speak(u);
+    setTimeout(finish, 1600 + text.length * 130);
   });
 }
 

@@ -1,4 +1,4 @@
-import { initAudio, speak, stopSpeech } from "./audio.js";
+import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride } from "./audio.js";
 import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
@@ -57,6 +57,49 @@ el("btn-replay").addEventListener("click", () => {
 
 el("btn-speak").addEventListener("pointerdown", () => {
   if (game.task && !game.locked) speak(game.task.instruction, game.voice);
+});
+
+const VOICE_SAMPLE = "Saluton! Mi estas Vulpo! Ni ludu kune!";
+
+function renderVoiceList() {
+  const { voices, current, saved } = getVoiceChoices();
+  const list = el("voice-list");
+  list.innerHTML = "";
+
+  const addItem = (label, id, active) => {
+    const btn = document.createElement("button");
+    btn.className = "voice-item" + (active ? " active" : "");
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      setVoiceOverride(id);
+      speak(VOICE_SAMPLE);
+      renderVoiceList();
+    });
+    list.appendChild(btn);
+  };
+
+  addItem(
+    `🔄 Automatycznie${!saved && current ? ` — ${current.name}` : ""}`,
+    null,
+    !saved,
+  );
+  for (const v of voices) {
+    const id = v.voiceURI ?? v.name;
+    addItem(`${v.name} — ${v.lang}`, id, saved === id);
+  }
+  if (!voices.length) {
+    list.innerHTML = `<p class="vortaro-empty">Ta przeglądarka nie udostępnia żadnych głosów 😢</p>`;
+  }
+}
+
+el("btn-voice").addEventListener("click", () => {
+  renderVoiceList();
+  el("voice-screen").classList.remove("hidden");
+});
+
+el("btn-close-voice").addEventListener("click", () => {
+  stopSpeech();
+  el("voice-screen").classList.add("hidden");
 });
 
 el("btn-vortaro").addEventListener("click", () => {

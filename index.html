@@ -42,6 +42,7 @@
     <div class="map-title-row">
       <h2 class="map-title">🏝️ Esperantio</h2>
       <button id="btn-story-replay" class="icon-button" aria-label="rakonto">📜</button>
+      <button id="btn-voice" class="icon-button" aria-label="voĉo">⚙️</button>
     </div>
     <div id="zone-list" class="zone-list"></div>
   </section>
@@ -77,6 +78,16 @@
         <button id="btn-map-win" class="big-button">🏝️ Mapo</button>
         <button id="btn-replay" class="big-button secondary">🔄 Denove</button>
       </div>
+    </div>
+  </section>
+
+  <!-- Wybór głosu lektora (ekran dla rodzica) -->
+  <section id="voice-screen" class="screen overlay hidden">
+    <div class="vortaro-box">
+      <h2>⚙️ Głos lektora</h2>
+      <p class="voice-hint">Stuknij głos, aby posłuchać próbki. Wybór zostanie zapamiętany.</p>
+      <div id="voice-list" class="voice-list"></div>
+      <button id="btn-close-voice" class="big-button">✖ Zamknij</button>
     </div>
   </section>
 

@@ -1,11 +1,17 @@
 // Silnik gry: pętla NPC-instrukcja → interakcja dziecka → reakcja świata → nagroda.
 // Silnik nie zna żadnych konkretnych słówek — wszystko pochodzi z js/data/zones.js.
+//
+// Tempo gry jest sterowane mową: każda kwestia NPC wybrzmiewa do końca,
+// a celebracje mają czas na animacje. `session` unieważnia trwające
+// sekwencje async, gdy dziecko wyjdzie do mapy w połowie zadania.
 
-import { speak, playSuccess, playRetry, playTap } from "./audio.js";
+import { speak, playSuccess, playRetry, playTap, wait, NARRATOR } from "./audio.js";
 
 const SAVE_KEY = "esperanta-aventuro-save-v1";
 
 const el = (id) => document.getElementById(id);
+
+const CONFETTI = ["⭐", "🎉", "✨", "🌟", "💛"];
 
 function loadSave() {
   let save;
@@ -17,6 +23,7 @@ function loadSave() {
   save.stars ??= 0;
   save.words ??= [];
   save.zones ??= {};
+  save.avatar ??= null;
   return save;
 }
 
@@ -42,35 +49,66 @@ export class Game {
     this.save = loadSave();
     this.zone = null;
     this.active = false;
+    this.session = 0;
     this.onWin = null; // ustawiane przez main.js (nawigacja)
-    this.updateStars();
+    this.updateHud();
     this.renderVortaro();
   }
 
-  loadZone(zone) {
-    this.zone = zone;
-    this.taskIndex = 0;
-    this.sessionStars = 0;
-    this.locked = false;
-    this.active = true;
-    el("npc").textContent = zone.npc.emoji;
-  }
-
-  // Wywoływane przy wyjściu do mapy — wyłącza opóźnione przejścia zadań.
-  deactivate() {
-    this.active = false;
+  get voice() {
+    return this.zone?.npc.voice ?? NARRATOR;
   }
 
   get task() {
     return this.zone?.tasks[this.taskIndex];
   }
 
-  showTask() {
-    if (!this.active) return;
+  setAvatar(avatar) {
+    this.save.avatar = avatar;
+    persist(this.save);
+    this.updateHud();
+  }
+
+  loadZone(zone) {
+    this.zone = zone;
+    this.taskIndex = 0;
+    this.sessionStars = 0;
+    this.locked = true;
+    this.active = true;
+    this.session++;
+    el("npc").textContent = zone.npc.emoji;
+  }
+
+  // Wywoływane przy wyjściu do mapy — unieważnia trwające sekwencje.
+  deactivate() {
+    this.active = false;
+    this.session++;
+  }
+
+  stale(session) {
+    return session !== this.session || !this.active;
+  }
+
+  // Wejście do strefy: NPC wskakuje na scenę i wita się do końca.
+  async intro() {
+    const s = this.session;
+    const npc = el("npc");
+    npc.className = "npc enter";
+    el("instruction").textContent = this.zone.npc.greeting;
+    el("objects").innerHTML = "";
+    await speak(this.zone.npc.greeting, this.voice);
+    if (this.stale(s)) return;
+    await wait(500);
+    if (this.stale(s)) return;
+    this.showTask();
+  }
+
+  async showTask() {
+    const s = this.session;
+    if (this.stale(s)) return;
     const task = this.task;
     if (!task) return this.finishZone();
 
-    this.locked = false;
     el("instruction").textContent = task.instruction;
     el("npc").className = "npc";
 
@@ -98,7 +136,8 @@ export class Game {
       box.appendChild(btn);
     }
 
-    speak(task.instruction);
+    this.locked = false;
+    await speak(task.instruction, this.voice);
   }
 
   onTap(btn, obj) {
@@ -111,60 +150,70 @@ export class Game {
     }
   }
 
-  onCorrect(btn) {
+  async onCorrect(btn) {
+    const s = this.session;
     this.locked = true;
+    const reward = this.task.reward;
+
+    // Celebracja: taniec NPC, konfetti, fanfary, pochwała do końca.
     btn.classList.add("correct");
-    el("npc").classList.add("happy");
+    el("npc").className = "npc dance";
+    playSuccess();
+    this.dropConfetti();
+    this.addStar();
 
     const praise = randomOf(this.zone.successPhrases);
     el("instruction").textContent = praise;
-    playSuccess();
-    speak(praise);
+    await speak(praise, this.voice);
+    if (this.stale(s)) return;
 
-    this.addStar();
-    this.dropStars();
-    this.unlockWord(this.task.reward);
+    // Nagroda: słówko pokazuje się i jest wyraźnie wypowiadane.
+    this.showReward(reward);
+    await speak(reward.word, { rate: 0.7, pitch: 1.15 });
+    if (this.stale(s)) return;
+    await wait(1200);
+    if (this.stale(s)) return;
 
-    setTimeout(() => {
-      this.hideReward();
-      this.taskIndex++;
-      this.showTask();
-    }, 2200);
+    this.hideReward();
+    this.taskIndex++;
+    this.showTask();
   }
 
-  onWrong(btn) {
+  async onWrong(btn) {
+    const s = this.session;
     this.locked = true;
     btn.classList.add("wrong");
-    el("npc").classList.add("thinking");
+    el("npc").className = "npc thinking";
 
     const phrase = randomOf(this.zone.retryPhrases);
     el("instruction").textContent = phrase;
     playRetry();
-    speak(phrase);
+    await speak(phrase, this.voice);
+    if (this.stale(s)) return;
+    await wait(500);
+    if (this.stale(s)) return;
 
     // Łagodna próba ponowna — ta sama instrukcja wraca, zero kary.
-    setTimeout(() => {
-      if (!this.active) return;
-      btn.classList.remove("wrong");
-      el("npc").classList.remove("thinking");
-      el("instruction").textContent = this.task.instruction;
-      speak(this.task.instruction);
-      this.locked = false;
-    }, 1800);
+    btn.classList.remove("wrong");
+    el("npc").className = "npc";
+    el("instruction").textContent = this.task.instruction;
+    this.locked = false;
+    speak(this.task.instruction, this.voice);
   }
 
   addStar() {
     this.save.stars++;
     this.sessionStars++;
     persist(this.save);
-    this.updateStars();
+    this.updateHud();
   }
 
-  updateStars() {
+  updateHud() {
     el("star-count").textContent = this.save.stars;
+    el("avatar-chip").textContent = this.save.avatar ?? "";
   }
 
-  unlockWord(reward) {
+  showReward(reward) {
     if (!reward) return;
     if (!this.save.words.some((w) => w.word === reward.word)) {
       this.save.words.push(reward);
@@ -180,19 +229,19 @@ export class Game {
     el("reward-toast").classList.add("hidden");
   }
 
-  dropStars() {
-    for (let i = 0; i < 6; i++) {
-      const star = document.createElement("div");
-      star.className = "falling-star";
-      star.textContent = "⭐";
-      star.style.left = `${10 + Math.random() * 80}vw`;
-      star.style.animationDelay = `${Math.random() * 0.4}s`;
-      document.body.appendChild(star);
-      setTimeout(() => star.remove(), 2000);
+  dropConfetti() {
+    for (let i = 0; i < 12; i++) {
+      const piece = document.createElement("div");
+      piece.className = "falling-star";
+      piece.textContent = randomOf(CONFETTI);
+      piece.style.left = `${5 + Math.random() * 90}vw`;
+      piece.style.animationDelay = `${Math.random() * 0.6}s`;
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 2400);
     }
   }
 
-  finishZone() {
+  async finishZone() {
     if (!this.active) return;
     const prev = this.save.zones[this.zone.id] ?? { done: false, stars: 0 };
     this.save.zones[this.zone.id] = {
@@ -201,17 +250,20 @@ export class Game {
     };
     persist(this.save);
 
+    el("win-npc").textContent = `${this.save.avatar ?? "🧒"} 🎉 ${this.zone.npc.emoji}`;
     el("win-text").textContent = this.zone.winText;
     el("win-stars").textContent = "⭐".repeat(Math.min(this.sessionStars, 10));
     playSuccess();
-    speak(`Bonege! ${this.zone.winText}`);
+    this.dropConfetti();
     this.onWin?.();
+    speak(`Bonege! ${this.zone.winText}`, this.voice);
   }
 
   replay() {
     this.taskIndex = 0;
     this.sessionStars = 0;
     this.active = true;
+    this.session++;
     this.showTask();
   }
 
@@ -226,7 +278,7 @@ export class Game {
       const item = document.createElement("button");
       item.className = "vortaro-item";
       item.innerHTML = `<span class="emoji">${w.emoji}</span>${w.word}`;
-      item.addEventListener("pointerdown", () => speak(w.word));
+      item.addEventListener("pointerdown", () => speak(w.word, { rate: 0.7, pitch: 1.15 }));
       grid.appendChild(item);
     }
   }

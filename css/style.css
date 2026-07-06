@@ -121,6 +121,53 @@ h1, h2 {
   cursor: pointer;
 }
 
+/* ---------- Bajka wprowadzająca ---------- */
+
+.story-inner {
+  margin: auto;
+  text-align: center;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: min(92vw, 480px);
+}
+
+.story-scene {
+  font-size: clamp(90px, 32vw, 170px);
+  animation: floaty 2.4s ease-in-out infinite;
+}
+
+.story-text {
+  font-size: clamp(22px, 6vw, 32px);
+  color: #2c5e1a;
+  background: #ffffffcc;
+  border-radius: 24px;
+  padding: 16px 24px;
+  min-height: 2.6em;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+.avatar-option {
+  border: none;
+  border-radius: 24px;
+  background: #ffffffd0;
+  box-shadow: 0 5px 0 #00000018;
+  font-size: clamp(40px, 12vw, 64px);
+  min-height: 84px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.avatar-option:active { transform: scale(0.9); }
+
 /* ---------- Mapa wyspy ---------- */
 
 #map-screen {
@@ -129,8 +176,15 @@ h1, h2 {
   overflow-y: auto;
 }
 
+.map-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
 .map-title {
-  margin: 0 0 20px;
+  margin: 0;
   font-size: clamp(30px, 8vw, 44px);
 }
 
@@ -208,6 +262,8 @@ h1, h2 {
 }
 
 .npc.happy { animation: bounce 0.5s ease-in-out 3; }
+.npc.dance { animation: dance 0.55s ease-in-out infinite; }
+.npc.enter { animation: enter 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .npc.thinking { transform: rotate(-8deg); }
 
 .bubble {
@@ -380,6 +436,16 @@ h1, h2 {
 
 @keyframes fall {
   to { transform: translateY(110vh) rotate(360deg); opacity: 0.7; }
+}
+
+@keyframes dance {
+  0%, 100% { transform: rotate(-10deg) scale(1.05); }
+  50% { transform: rotate(10deg) scale(1.12); }
+}
+
+@keyframes enter {
+  0% { transform: translateY(60vh) scale(0.3); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 @keyframes hop {

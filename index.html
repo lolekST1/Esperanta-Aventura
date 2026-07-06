@@ -14,7 +14,7 @@
   <!-- Wspólny pasek górny (mapa / gra / wygrana) -->
   <header id="topbar" class="hidden">
     <button id="btn-map" class="icon-button hidden" aria-label="mapo">🏝️</button>
-    <div id="star-counter" aria-label="steloj">⭐ <span id="star-count">0</span></div>
+    <div id="star-counter" aria-label="steloj"><span id="avatar-chip"></span> ⭐ <span id="star-count">0</span></div>
     <button id="btn-vortaro" class="icon-button" aria-label="vortaro">📖</button>
   </header>
 
@@ -27,9 +27,22 @@
     </div>
   </section>
 
+  <!-- Bajka wprowadzająca + wybór postaci -->
+  <section id="story-screen" class="screen hidden">
+    <div class="story-inner">
+      <div id="story-scene" class="story-scene">🎈</div>
+      <p id="story-text" class="story-text"></p>
+      <div id="avatar-grid" class="avatar-grid hidden"></div>
+      <button id="btn-story-next" class="big-button">➜</button>
+    </div>
+  </section>
+
   <!-- Mapa wyspy Esperantio -->
   <section id="map-screen" class="screen hidden">
-    <h2 class="map-title">🏝️ Esperantio</h2>
+    <div class="map-title-row">
+      <h2 class="map-title">🏝️ Esperantio</h2>
+      <button id="btn-story-replay" class="icon-button" aria-label="rakonto">📜</button>
+    </div>
     <div id="zone-list" class="zone-list"></div>
   </section>
 
@@ -56,7 +69,7 @@
   <!-- Ekran końcowy strefy -->
   <section id="win-screen" class="screen hidden">
     <div class="start-inner">
-      <div class="start-npc">🎉</div>
+      <div id="win-npc" class="start-npc">🎉</div>
       <h2 id="win-title">Bonege!</h2>
       <p id="win-text">Vi trovis ĉiujn fruktojn!</p>
       <div id="win-stars"></div>

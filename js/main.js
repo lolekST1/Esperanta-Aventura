@@ -1,21 +1,23 @@
-import { initAudio, speak } from "./audio.js";
+import { initAudio, speak, stopSpeech } from "./audio.js";
 import { Game } from "./game.js";
 import { renderMap } from "./map.js";
+import { runIntro } from "./story.js";
 
 const el = (id) => document.getElementById(id);
-const SCREENS = ["start-screen", "map-screen", "game-screen", "win-screen"];
+const SCREENS = ["start-screen", "story-screen", "map-screen", "game-screen", "win-screen"];
 
 const game = new Game();
 
 function showScreen(name) {
   for (const s of SCREENS) el(s).classList.toggle("hidden", s !== name);
-  el("topbar").classList.toggle("hidden", name === "start-screen");
+  const bareScreen = name === "start-screen" || name === "story-screen";
+  el("topbar").classList.toggle("hidden", bareScreen);
   el("btn-map").classList.toggle("hidden", name === "map-screen");
 }
 
 function goToMap() {
   game.deactivate();
-  window.speechSynthesis?.cancel();
+  stopSpeech();
   renderMap(game.save, enterZone);
   showScreen("map-screen");
 }
@@ -23,8 +25,12 @@ function goToMap() {
 function enterZone(zone) {
   game.loadZone(zone);
   showScreen("game-screen");
-  speak(`Saluton! Mi estas ${zone.npc.name}!`);
-  setTimeout(() => game.showTask(), 1600);
+  game.intro();
+}
+
+function startStory() {
+  showScreen("story-screen");
+  runIntro(game, goToMap);
 }
 
 game.onWin = () => showScreen("win-screen");
@@ -32,11 +38,17 @@ game.onWin = () => showScreen("win-screen");
 // Start wymaga gestu użytkownika — to odblokowuje audio na urządzeniach mobilnych.
 el("btn-start").addEventListener("click", () => {
   initAudio();
-  goToMap();
+  if (game.save.avatar) goToMap();
+  else startStory();
 });
 
 el("btn-map").addEventListener("click", goToMap);
 el("btn-map-win").addEventListener("click", goToMap);
+el("btn-story-replay").addEventListener("click", () => {
+  game.deactivate();
+  stopSpeech();
+  startStory();
+});
 
 el("btn-replay").addEventListener("click", () => {
   showScreen("game-screen");
@@ -44,7 +56,7 @@ el("btn-replay").addEventListener("click", () => {
 });
 
 el("btn-speak").addEventListener("pointerdown", () => {
-  if (game.task) speak(game.task.instruction);
+  if (game.task && !game.locked) speak(game.task.instruction, game.voice);
 });
 
 el("btn-vortaro").addEventListener("click", () => {

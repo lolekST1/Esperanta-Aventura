@@ -10,15 +10,22 @@
 //   correct     — id poprawnego obiektu
 //   reward      — słówko odblokowywane po sukcesie (trafia do Vortaro)
 //
-// NPC mają osobowości słyszalne we frazach: Vulpo jest szybki i wesoły,
-// Urso powolny i czuły, Papago wszystko powtarza dwa razy.
+// NPC mają osobowości słyszalne we frazach ORAZ w głosie (voice: rate/pitch
+// dla TTS): Vulpo jest szybki i wysoki, Urso powolny i niski, Papago
+// wysoki, skrzekliwy i wszystko powtarza dwa razy.
 
 export const ZONES = {
   fruktejo: {
     id: "fruktejo",
     name: "Fruktejo",
     mapEmoji: "🍎",
-    npc: { id: "vulpo", emoji: "🦊", name: "Vulpo" },
+    npc: {
+      id: "vulpo",
+      emoji: "🦊",
+      name: "Vulpo",
+      greeting: "Saluton! Mi estas Vulpo! Ni ludu kune!",
+      voice: { rate: 1.05, pitch: 1.4 },
+    },
     winText: "Vi trovis ĉiujn fruktojn!",
     retryPhrases: [
       "Hmm... provu denove!",
@@ -94,7 +101,13 @@ export const ZONES = {
     id: "vilago",
     name: "Vilaĝo",
     mapEmoji: "🏡",
-    npc: { id: "urso", emoji: "🐻", name: "Urso" },
+    npc: {
+      id: "urso",
+      emoji: "🐻",
+      name: "Urso",
+      greeting: "Saluton, kara amiko... Mi estas Urso. Bonvenon.",
+      voice: { rate: 0.68, pitch: 0.6 },
+    },
     winText: "Vi konas la vilaĝon!",
     retryPhrases: [
       "Hmm... provu denove, kara.",
@@ -188,7 +201,13 @@ export const ZONES = {
     id: "arbaro",
     name: "Arbaro",
     mapEmoji: "🌳",
-    npc: { id: "papago", emoji: "🦜", name: "Papago" },
+    npc: {
+      id: "papago",
+      emoji: "🦜",
+      name: "Papago",
+      greeting: "Saluton! Saluton! Mi estas Papago! Papago!",
+      voice: { rate: 1.15, pitch: 1.8 },
+    },
     winText: "Vi konas la arbaron!",
     retryPhrases: [
       "Provu denove! Provu denove!",

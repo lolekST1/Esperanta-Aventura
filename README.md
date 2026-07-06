@@ -98,6 +98,13 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ zapis postępu per strefa (gwiazdki, ukończenie)
 - ⬜ nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w `zones.js`)
 
+**Faza 2.5 (✅)** — fabuła, personalizacja i żywe audio
+- ✅ bajka wprowadzająca: lot balonem na wyspę Esperantio (powtarzalna z mapy 📜)
+- ✅ wybór własnej postaci (awatar towarzyszy dziecku w HUD i na ekranach wygranej)
+- ✅ spersonalizowane głosy NPC (rate/pitch: Vulpo szybki i wysoki, Urso wolny i niski, Papago skrzekliwy)
+- ✅ tempo gry sterowane mową — kwestie wybrzmiewają do końca, celebracje mają czas na animacje (taniec NPC, konfetti, wejście NPC na scenę)
+- ✅ lepsza wymowa TTS: preferencja głosów eo→pl→hr/sk/cs/it/es (nigdy angielski, gdy jest alternatywa) + transliteracja esperanta na polską ortografię dla głosu pl
+
 **Faza 3 — głębia mechanik: słowa jako umiejętności**
 - zebrane słówka odblokowują akcje w świecie (akvo → podlewanie, ruĝa → czerwone drzwi)
 - nowe typy zadań w silniku: `tap` (jest), `drag` (Donu la pomon al Urso), `sequence` (Unue... poste...)

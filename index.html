@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="eo">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#7ec850">
+  <title>Esperanta Aventuro</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Ekran startowy -->
+  <section id="start-screen" class="screen">
+    <div class="start-inner">
+      <div class="start-npc">🦊</div>
+      <h1>Esperanta<br>Aventuro</h1>
+      <button id="btn-start" class="big-button">▶ Ludi!</button>
+    </div>
+  </section>
+
+  <!-- Główny ekran gry -->
+  <section id="game-screen" class="screen hidden">
+    <header id="topbar">
+      <div id="star-counter" aria-label="steloj">⭐ <span id="star-count">0</span></div>
+      <button id="btn-vortaro" class="icon-button" aria-label="vortaro">📖</button>
+    </header>
+
+    <div id="stage">
+      <div id="npc-area">
+        <div id="npc" class="npc">🦊</div>
+        <div id="bubble" class="bubble">
+          <span id="instruction"></span>
+          <button id="btn-speak" class="speak-button" aria-label="ripeti">🔊</button>
+        </div>
+      </div>
+
+      <div id="objects" class="objects"></div>
+    </div>
+
+    <div id="reward-toast" class="reward-toast hidden">
+      <span id="reward-emoji"></span>
+      <span id="reward-word"></span>
+    </div>
+  </section>
+
+  <!-- Ekran końcowy strefy -->
+  <section id="win-screen" class="screen hidden">
+    <div class="start-inner">
+      <div class="start-npc">🎉</div>
+      <h2 id="win-title">Bonege!</h2>
+      <p id="win-text">Vi trovis ĉiujn fruktojn!</p>
+      <div id="win-stars"></div>
+      <button id="btn-replay" class="big-button">🔄 Ludi denove</button>
+    </div>
+  </section>
+
+  <!-- Vortaro (album słówek) -->
+  <section id="vortaro-screen" class="screen overlay hidden">
+    <div class="vortaro-box">
+      <h2>📖 Mia Vortaro</h2>
+      <div id="vortaro-grid" class="vortaro-grid"></div>
+      <button id="btn-close-vortaro" class="big-button">✖ Fermi</button>
+    </div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

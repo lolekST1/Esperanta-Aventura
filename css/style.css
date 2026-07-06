@@ -1,0 +1,290 @@
+/* Esperanta Aventuro — mobile-first, duże cele dotykowe, zero bałaganu */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+body {
+  background: linear-gradient(180deg, #aee7ff 0%, #d9f7c9 55%, #7ec850 100%);
+}
+
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- Ekran startowy / końcowy ---------- */
+
+.start-inner {
+  margin: auto;
+  text-align: center;
+  padding: 24px;
+}
+
+.start-npc {
+  font-size: clamp(80px, 30vw, 160px);
+  animation: bounce 1.6s ease-in-out infinite;
+}
+
+h1, h2 {
+  color: #2c5e1a;
+  font-size: clamp(32px, 9vw, 56px);
+  margin: 16px 0 32px;
+  text-shadow: 0 2px 0 #ffffffaa;
+}
+
+#win-text {
+  font-size: clamp(20px, 6vw, 32px);
+  color: #2c5e1a;
+  margin-bottom: 16px;
+}
+
+#win-stars {
+  font-size: clamp(28px, 8vw, 44px);
+  margin-bottom: 32px;
+}
+
+.big-button {
+  font-family: inherit;
+  font-size: clamp(24px, 7vw, 36px);
+  padding: 20px 44px;
+  min-height: 72px;
+  min-width: 200px;
+  border: none;
+  border-radius: 999px;
+  background: #ff9f1c;
+  color: #fff;
+  box-shadow: 0 6px 0 #d97e00;
+  cursor: pointer;
+}
+
+.big-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #d97e00;
+}
+
+/* ---------- Pasek górny ---------- */
+
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+#star-counter {
+  font-size: 28px;
+  background: #ffffffcc;
+  border-radius: 999px;
+  padding: 8px 20px;
+  color: #b8860b;
+  font-weight: bold;
+}
+
+.icon-button {
+  font-size: 30px;
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: #ffffffcc;
+  cursor: pointer;
+}
+
+/* ---------- Scena ---------- */
+
+#stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: 8px 16px 32px;
+}
+
+#npc-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 560px;
+}
+
+.npc {
+  font-size: clamp(64px, 20vw, 120px);
+  flex-shrink: 0;
+  transition: transform 0.3s;
+}
+
+.npc.happy { animation: bounce 0.5s ease-in-out 3; }
+.npc.thinking { transform: rotate(-8deg); }
+
+.bubble {
+  position: relative;
+  background: #fff;
+  border-radius: 24px;
+  padding: 16px 20px;
+  font-size: clamp(22px, 6vw, 32px);
+  color: #333;
+  box-shadow: 0 4px 12px #00000022;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 10px solid transparent;
+  border-right-color: #fff;
+}
+
+.speak-button {
+  font-size: 26px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: #e8f4ff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---------- Obiekty do stuknięcia ---------- */
+
+.objects {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.object-button {
+  font-size: clamp(64px, 22vw, 130px);
+  width: clamp(96px, 28vw, 170px);
+  height: clamp(96px, 28vw, 170px);
+  border: none;
+  border-radius: 28px;
+  background: #ffffffb0;
+  box-shadow: 0 6px 0 #00000018;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+
+.object-button:active { transform: scale(0.92); }
+.object-button.correct { animation: pop 0.6s ease; background: #c9f7c9; }
+.object-button.wrong { animation: wobble 0.5s ease; }
+
+/* ---------- Nagroda ---------- */
+
+.reward-toast {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 32px;
+  padding: 24px 40px;
+  font-size: clamp(28px, 8vw, 44px);
+  color: #2c5e1a;
+  box-shadow: 0 8px 30px #00000033;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: pop 0.5s ease;
+  z-index: 10;
+}
+
+#reward-emoji { font-size: 1.4em; }
+
+/* Spadające gwiazdki */
+.falling-star {
+  position: fixed;
+  top: -50px;
+  font-size: 36px;
+  animation: fall 1.4s linear forwards;
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* ---------- Vortaro ---------- */
+
+.overlay { background: #00000088; z-index: 20; }
+
+.vortaro-box {
+  margin: auto;
+  background: #fffef2;
+  border-radius: 28px;
+  padding: 24px;
+  width: min(92vw, 480px);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+}
+
+.vortaro-box h2 { margin: 0; font-size: 30px; }
+
+.vortaro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.vortaro-item {
+  border: none;
+  background: #eaf7e0;
+  border-radius: 20px;
+  padding: 12px 6px;
+  font-family: inherit;
+  font-size: 18px;
+  color: #2c5e1a;
+  cursor: pointer;
+  min-height: 96px;
+}
+
+.vortaro-item .emoji { display: block; font-size: 44px; margin-bottom: 6px; }
+
+.vortaro-empty { color: #999; font-size: 20px; }
+
+/* ---------- Animacje ---------- */
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px) rotate(-4deg); }
+  75% { transform: translateX(10px) rotate(4deg); }
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(360deg); opacity: 0.7; }
+}

@@ -1,8 +1,10 @@
 // Audio: mowa (Web Speech API) + proste efekty dźwiękowe (Web Audio API).
 //
 // Dobór głosu: esperancki jest rzadki, więc szukamy w kolejności języków
-// o fonetyce najbliższej esperantu. Angielski tylko w ostateczności —
-// czyta esperanto fatalnie.
+// o fonetyce najbliższej esperantu. Angielski tylko w ostateczności.
+// Gdy jednak zostaje angielski (lub polski), tekst jest transliterowany
+// na ortografię tego języka, żeby wymowa była poprawna — np. dla
+// angielskiego "birdon" → "beerdohn" (inaczej lektor czyta "berdon").
 //
 // speak() zwraca Promise kończącą się wraz z mową — całe tempo gry
 // (pauzy, przejścia) jest sterowane faktyczną długością wypowiedzi.
@@ -14,14 +16,23 @@ const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
 
 function pickVoice() {
   const voices = window.speechSynthesis?.getVoices?.() ?? [];
+  const byName = voices.find((v) => /esperant/i.test(v.name ?? ""));
+  if (byName) {
+    voice = byName;
+    return;
+  }
   for (const lang of VOICE_LANG_PREFS) {
-    const v = voices.find((v) => v.lang?.toLowerCase().startsWith(lang));
+    const v = voices.find((v) => v.lang?.toLowerCase().replace("_", "-").startsWith(lang));
     if (v) {
       voice = v;
       return;
     }
   }
   voice = voices.find((v) => !v.lang?.toLowerCase().startsWith("en")) || voices[0] || null;
+}
+
+function effectiveLang() {
+  return voice?.lang?.toLowerCase().slice(0, 2) ?? "";
 }
 
 // Polski głos czyta esperanto niemal poprawnie, jeśli zapisać tekst
@@ -36,9 +47,49 @@ const PL_MAP = {
   "v": "w", "V": "W",
 };
 
-function prepareText(text) {
-  if (!voice?.lang?.toLowerCase().startsWith("pl")) return text;
+function toPolish(text) {
   return text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvV]/g, (ch) => PL_MAP[ch] ?? ch);
+}
+
+// Angielski głos stosuje angielskie reguły czytania ("bird", "science"),
+// więc zapisujemy każdą głoskę tak, jak Anglik by ją przeczytał.
+// Jedno przejście po tekście (najdłuższe dopasowanie najpierw) — bez
+// ryzyka ponownego podstawiania we wstawionych fragmentach.
+const EN_MAP = {
+  "aŭ": "ow", "eŭ": "ehw",
+  "ĉ": "ch", "ĝ": "j", "ĵ": "zh", "ŝ": "sh", "ĥ": "h", "ŭ": "w",
+  "c": "ts", "j": "y",
+  "a": "ah", "e": "eh", "i": "ee", "o": "oh", "u": "oo",
+};
+
+function toEnglishPhonetic(text) {
+  const lower = text.toLowerCase();
+  let out = "";
+  let i = 0;
+  while (i < lower.length) {
+    const two = lower.slice(i, i + 2);
+    if (EN_MAP[two]) {
+      out += EN_MAP[two];
+      i += 2;
+      continue;
+    }
+    out += EN_MAP[lower[i]] ?? lower[i];
+    i++;
+  }
+  return out;
+}
+
+function prepareText(text) {
+  const lang = effectiveLang();
+  if (lang === "pl") return toPolish(text);
+  if (lang === "en") return toEnglishPhonetic(text);
+  return text;
+}
+
+// Do diagnostyki i testów: jak dokładnie zostanie przeczytany dany tekst.
+export function previewSpeech(text) {
+  if (!voice) pickVoice();
+  return { voice: voice ? `${voice.name} (${voice.lang})` : null, text: prepareText(text) };
 }
 
 // Profil narratora; NPC mają własne profile w zones.js.
@@ -68,6 +119,9 @@ export function speak(text, profile = NARRATOR) {
       setTimeout(finish, Math.min(400 + text.length * 70, 2600));
       return;
     }
+
+    // Lista głosów potrafi załadować się po starcie — dobieraj do skutku.
+    if (!voice) pickVoice();
 
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(prepareText(text));

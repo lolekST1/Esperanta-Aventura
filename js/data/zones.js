@@ -27,6 +27,12 @@ export const ZONES = {
       greeting: "Saluton! Mi estas Vulpo! Ni ludu kune!",
       voice: { rate: 1.05, pitch: 1.4 },
     },
+    // Krótka historyjka — gra się raz, przy pierwszym wejściu do strefy,
+    // zaraz po powitaniu, zanim zaczną się zadania.
+    story: [
+      "Mi volas fari fruktokorbon por miaj amikoj.",
+      "Ĉu vi helpos min trovi fruktojn?",
+    ],
     winText: "Vi trovis ĉiujn fruktojn!",
     retryPhrases: [
       "Hmm... provu denove!",
@@ -110,6 +116,10 @@ export const ZONES = {
       greeting: "Saluton, kara amiko... Mi estas Urso. Bonvenon.",
       voice: { rate: 0.68, pitch: 0.6 },
     },
+    story: [
+      "Mi serĉas manĝaĵojn por mia hejmo...",
+      "Ĉu vi helpos min trovi ilin en la vilaĝo?",
+    ],
     winText: "Vi konas la vilaĝon!",
     retryPhrases: [
       "Hmm... provu denove, kara.",
@@ -211,6 +221,10 @@ export const ZONES = {
       greeting: "Saluton! Saluton! Mi estas Papago! Papago!",
       voice: { rate: 1.15, pitch: 1.8 },
     },
+    story: [
+      "La bestoj kaŝiĝis en la arbaro! Kaŝiĝis!",
+      "Ni trovu ilin kune! Kune!",
+    ],
     winText: "Vi konas la arbaron!",
     retryPhrases: [
       "Provu denove! Provu denove!",

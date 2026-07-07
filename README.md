@@ -113,6 +113,7 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ tempo gry sterowane mową — kwestie wybrzmiewają do końca, celebracje mają czas na animacje (taniec NPC, konfetti, wejście NPC na scenę)
 - ✅ lepsza wymowa TTS: preferencja głosów eo→pl→hr/sk/cs/it/es (nigdy angielski, gdy jest alternatywa) + transliteracja esperanta na polską ortografię dla głosu pl
 - ✅ prawdziwa mapa wyspy: SVG-owa wyspa (plaża + ląd), przerywana ścieżka łącząca strefy w kolejności `ZONE_ORDER`, awatar dziecka fizycznie chodzi między znacznikami stref (animacja spaceru, pozycja zapamiętywana między sesjami — `js/map.js`, współrzędne w `zone.map` w `zones.js`)
+- ✅ miniopowiastki per strefa: NPC po powitaniu tłumaczy, po co prosi o pomoc (`zone.story` w `zones.js`) — gra się raz, przy pierwszym wejściu do strefy (`save.storiesSeen`), przy kolejnych wizytach pomijana
 
 **Faza 3 — głębia mechanik: słowa jako umiejętności**
 - zebrane słówka odblokowują akcje w świecie (akvo → podlewanie, ruĝa → czerwone drzwi)

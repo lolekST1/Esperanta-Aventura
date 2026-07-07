@@ -25,6 +25,7 @@ function loadSave() {
   save.zones ??= {};
   save.avatar ??= null;
   save.mapPosition ??= null;
+  save.storiesSeen ??= {};
   return save;
 }
 
@@ -97,7 +98,9 @@ export class Game {
     return session !== this.session || !this.active;
   }
 
-  // Wejście do strefy: NPC wskakuje na scenę i wita się do końca.
+  // Wejście do strefy: NPC wskakuje na scenę i wita się do końca, a przy
+  // pierwszej wizycie opowiada krótko, po co prosi o pomoc (zone.story) —
+  // przy kolejnych wejściach ta część jest pomijana.
   async intro() {
     const s = this.session;
     const npc = el("npc");
@@ -108,6 +111,19 @@ export class Game {
     if (this.stale(s)) return;
     await wait(500);
     if (this.stale(s)) return;
+
+    if (this.zone.story && !this.save.storiesSeen[this.zone.id]) {
+      for (const line of this.zone.story) {
+        el("instruction").textContent = line;
+        await speak(line, this.voice);
+        if (this.stale(s)) return;
+        await wait(600);
+        if (this.stale(s)) return;
+      }
+      this.save.storiesSeen[this.zone.id] = true;
+      persist(this.save);
+    }
+
     this.showTask();
   }
 

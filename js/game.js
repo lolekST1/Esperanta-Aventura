@@ -5,7 +5,7 @@
 // a celebracje mają czas na animacje. `session` unieważnia trwające
 // sekwencje async, gdy dziecko wyjdzie do mapy w połowie zadania.
 
-import { speak, playSuccess, playRetry, playTap, wait, NARRATOR } from "./audio.js";
+import { speak, playSuccess, playRetry, playTap, wait, NARRATOR, REWARD_VOICE } from "./audio.js";
 import { ZONES } from "./data/zones.js";
 
 const SAVE_KEY = "esperanta-aventuro-save-v1";
@@ -494,7 +494,7 @@ export class Game {
 
     // Nagroda: słówko pokazuje się i jest wyraźnie wypowiadane.
     this.showReward(reward);
-    await speak(reward.word, { rate: 0.7, pitch: 1.15 });
+    await speak(reward.word, REWARD_VOICE);
     if (this.stale(s)) return;
     await wait(1200);
     if (this.stale(s)) return;
@@ -631,7 +631,7 @@ export class Game {
 
     if (first && sk.reward) {
       this.showReward(sk.reward);
-      await speak(sk.reward.word, { rate: 0.7, pitch: 1.15 });
+      await speak(sk.reward.word, REWARD_VOICE);
       if (this.stale(s)) return;
       await wait(1200);
       if (this.stale(s)) return;
@@ -697,7 +697,7 @@ export class Game {
       const item = document.createElement("button");
       item.className = "vortaro-item";
       item.innerHTML = `<span class="emoji">${w.emoji}</span>${w.word}`;
-      item.addEventListener("pointerdown", () => speak(w.word, { rate: 0.7, pitch: 1.15 }));
+      item.addEventListener("pointerdown", () => speak(w.word, REWARD_VOICE));
       grid.appendChild(item);
     }
   }

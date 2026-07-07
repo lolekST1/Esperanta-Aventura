@@ -130,15 +130,10 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ strefa Vilaĝo 🏡 z misiem Urso (dom, jedzenie, granda/malgranda przez skalę obiektów)
 - ✅ strefa Arbaro 🌳 z papugą Papago (zwierzęta, czasowniki ruchu — obiekty *animowane*: „Tuŝu la saltantan beston!")
 - ✅ zapis postępu per strefa (gwiazdki, ukończenie)
-- ⬜ nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w `zones.js`)
-  — **notatka z testów (2026-07-07):** darmowe głosy przeglądarki (Web Speech
-    API) są niespójne między urządzeniami i wymagają transliteracji-obejść
-    (patrz `js/audio.js`); test z OpenAI TTS wykazał, że głosy **Cedar, Marin
-    i Nova** poprawnie wymawiają esperanckie testowe słowa (sciuro, birdo,
-    hundino) bez żadnych sztuczek. Jeśli nagrania lektorskie nie wejdą od
-    razu, wygenerowanie fraz przez OpenAI TTS (jednorazowo, offline, jako
-    pliki mp3) tymi głosami może być szybszą drogą do dobrej wymowy niż
-    dalsze łatanie Web Speech API
+- ✅ flow generowania nagrań lektorskich przez OpenAI TTS — patrz sekcja
+  „🎙️ Nagrania lektorskie (OpenAI TTS)" niżej. Gra działa identycznie bez
+  uruchamiania generatora (pusty manifest = pełny fallback na Web Speech),
+  więc to bezpieczne, stopniowe ulepszenie, nie wymóg
 
 **Faza 2.5 (✅)** — fabuła, personalizacja i żywe audio
 - ✅ bajka wprowadzająca: lot balonem na wyspę Esperantio (powtarzalna z mapy 📜)
@@ -200,6 +195,50 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - **Nowa akcja-słowo**: dodaj `skill` do strefy (patrz wyżej) — przycisk,
   blokada i iskierka na mapie zadziałają same
 - **Nowy typ interakcji**: dodaj pole `type` w zadaniu i gałąź w `game.js`
+
+## 🎙️ Nagrania lektorskie (OpenAI TTS)
+
+Web Speech API (darmowe głosy przeglądarki) działa jako fallback zawsze
+dostępny, ale bywa niespójne między urządzeniami i wymaga transliteracji-
+-obejść (patrz komentarze w `js/audio.js`). Docelowo gra ma używać gotowych
+nagrań mp3 wygenerowanych raz, offline, przez OpenAI TTS — testy wykazały,
+że głosy **Cedar, Marin i Nova** poprawnie wymawiają esperanckie słowa testowe
+(sciuro, birdo, hundino) bez żadnych sztuczek.
+
+**Jak to działa:**
+
+1. `tools/generate-tts.mjs` zbiera WSZYSTKIE unikalne kwestie wypowiadane
+   w grze (powitania NPC, historyjki, instrukcje zadań, frazy sukcesu/
+   pomyłki, teksty umiejętności, słówka-nagrody, bajka wprowadzająca, kilka
+   stałych fraz interfejsu) — bezpośrednio z `js/data/zones.js` i
+   `js/data/story.js`, więc nie trzeba niczego wypisywać ręcznie.
+2. Każdy z 6 NPC (+ narrator + osobny profil dla wolno wymawianych słówek-
+   -nagród) ma przypisany jeden z trzech zweryfikowanych głosów OpenAI,
+   różnicowany tempem i stylem (`ROLES` w skrypcie) — sam skrypt woła
+   `POST https://api.openai.com/v1/audio/speech` (model `gpt-4o-mini-tts`
+   domyślnie) i zapisuje wynik jako `assets/audio/<rola>-<hash>.mp3`.
+3. Wynikowa mapa `(tempo, wysokość, tekst) → ścieżka pliku` trafia do
+   `js/data/audioManifest.js`. `js/audio.js` sprawdza ten manifest w
+   `speak()`: jeśli jest nagranie — odtwarza je (`<audio>`); jeśli nie ma,
+   albo odtwarzanie się nie powiedzie (brak pliku, błąd sieci) — **zawsze**
+   przezroczyście spada na dotychczasową syntezę Web Speech. Gra nigdy nie
+   wymaga nagrań, żeby działać.
+
+**Uruchomienie** (wymaga Node 18+ i klucza OpenAI):
+
+```bash
+OPENAI_API_KEY=sk-... node tools/generate-tts.mjs
+# albo najpierw podgląd listy fraz bez wywoływania API:
+node tools/generate-tts.mjs --dry-run
+```
+
+Bezpieczne do przerwania i ponownego uruchomienia w dowolnym momencie —
+pomija kwestie, dla których plik mp3 już istnieje na dysku i jest wpisany
+w manifeście, więc generowanie można robić stopniowo, strefa po strefie.
+Nowe zadanie/strefa/frazę dopisane później do `zones.js` automatycznie
+pojawią się na liście przy kolejnym uruchomieniu skryptu — nic nie trzeba
+synchronizować ręcznie poza czterema stałymi frazami interfejsu wypisanymi
+wprost w `tools/generate-tts.mjs` (`NARRATOR_UI_LINES`).
 
 ## 🎨 Zasady projektowe
 

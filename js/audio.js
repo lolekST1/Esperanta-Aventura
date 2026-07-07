@@ -8,9 +8,20 @@
 //
 // speak() zwraca Promise kończącą się wraz z mową — całe tempo gry
 // (pauzy, przejścia) jest sterowane faktyczną długością wypowiedzi.
+//
+// Nagrania lektorskie: jeśli dla danej (tekst, profil) pary istnieje wpis
+// w AUDIO_MANIFEST (wygenerowany przez tools/generate-tts.mjs z OpenAI TTS),
+// speak() odtwarza GOTOWY plik mp3 zamiast syntezy Web Speech — lepsza,
+// spójna wymowa esperanta bez transliteracji-obejść poniżej. Cokolwiek
+// jeszcze nie zostało nagrane (albo odtwarzanie się nie uda) spada na
+// dotychczasową syntezę, więc funkcja tego pliku działa identycznie nawet
+// przy pustym manifeście.
+
+import { AUDIO_MANIFEST } from "./data/audioManifest.js";
 
 let voice = null;
 let ctx = null;
+let currentAudio = null;
 
 const VOICE_KEY = "esperanta-aventuro-voice";
 const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
@@ -172,6 +183,18 @@ export function previewSpeech(text) {
 // Profil narratora; NPC mają własne profile w zones.js.
 export const NARRATOR = { rate: 0.85, pitch: 1.0 };
 
+// Profil wypowiadania POJEDYNCZEGO słówka-nagrody (wolno i wyraźnie) —
+// używany w grze przy zdobyciu nagrody i przy odtwarzaniu z Vortaro.
+export const REWARD_VOICE = { rate: 0.7, pitch: 1.15 };
+
+// Musi dawać IDENTYCZNY wynik co profileKey() w tools/generate-tts.mjs —
+// to ten sam klucz z dwóch stron (generator zapisuje, runtime odczytuje).
+function manifestKey(text, profile) {
+  const rate = profile.rate ?? NARRATOR.rate;
+  const pitch = profile.pitch ?? NARRATOR.pitch;
+  return `${rate}|${pitch}|${text}`;
+}
+
 // Telefony blokują TTS, dopóki pierwsze speak() nie padnie SYNCHRONICZNIE
 // w geście użytkownika. initAudio() jest wołane w handlerze kliknięcia
 // „Ludi!", więc odblokowujemy tu silnik cichą wypowiedzią.
@@ -189,9 +212,47 @@ export function initAudio() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (AudioCtx && !ctx) ctx = new AudioCtx();
   if (ctx?.state === "suspended") ctx.resume();
+
+  // Analogiczne odblokowanie dla odtwarzania nagrań mp3 (osobny mechanizm
+  // przeglądarki niż speechSynthesis) — bez tego pierwsze Audio().play()
+  // poza gestem użytkownika mogłoby zostać zablokowane na iOS Safari.
+  try {
+    new Audio().play().catch(() => {});
+  } catch {}
+}
+
+// Gotowe nagranie (jeśli istnieje w manifeście) zamiast syntezy. Błąd
+// odtwarzania (plik brakuje, sieć padła) przezroczyście spada na syntezę —
+// dziecko nigdy nie zostaje bez żadnej mowy z powodu jednego złego pliku.
+function playRecording(src, text, profile) {
+  currentAudio?.pause();
+  return new Promise((resolve) => {
+    const audio = new Audio(src);
+    currentAudio = audio;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    const fallback = () => {
+      if (settled) return;
+      settled = true;
+      speakSynthesized(text, profile).then(resolve);
+    };
+    audio.addEventListener("ended", finish);
+    audio.addEventListener("error", fallback);
+    audio.play().catch(fallback);
+  });
 }
 
 export function speak(text, profile = NARRATOR) {
+  const recorded = AUDIO_MANIFEST[manifestKey(text, profile)];
+  if (recorded) return playRecording(recorded, text, profile);
+  return speakSynthesized(text, profile);
+}
+
+function speakSynthesized(text, profile = NARRATOR) {
   return new Promise((resolve) => {
     let done = false;
     const finish = () => {
@@ -234,6 +295,7 @@ export function speak(text, profile = NARRATOR) {
 
 export function stopSpeech() {
   window.speechSynthesis?.cancel();
+  currentAudio?.pause();
 }
 
 // Diagnostyka na żywo dla ekranu ⚙️ — gdy nawet ręczny wybór głosu milczy,
@@ -242,7 +304,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v23-adaptaj-ripetoj";
+export const GAME_VERSION = "v24-tts-fluo";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

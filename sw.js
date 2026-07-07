@@ -5,7 +5,7 @@
 // spadamy na to, co jest w cache. Bez tego stara wersja gry potrafiła
 // zostać w PWA nawet po wdrożeniu poprawki, dopóki ktoś nie zamknął
 // i nie otworzył aplikacji kilka razy (mylące przy debugowaniu na żywo).
-const CACHE = "esperanta-aventuro-v23";
+const CACHE = "esperanta-aventuro-v24";
 const ASSETS = [
   ".",
   "index.html",
@@ -18,6 +18,7 @@ const ASSETS = [
   "js/audio.js",
   "js/data/zones.js",
   "js/data/story.js",
+  "js/data/audioManifest.js",
   "assets/icon.svg",
 ];
 
@@ -37,6 +38,10 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// Nagrania mp3 (assets/audio/*) CELOWO nie są w ASSETS — może ich być
+// grubo ponad sto, co rozdęłoby pierwsze pobranie. Trafiają do cache leniwie,
+// przy pierwszym realnym odtworzeniu, przez gałąź "else" niżej (ta sama
+// strategia co dla innych zasobów niekodowych, np. ikony).
 self.addEventListener("fetch", (e) => {
   const isCode = e.request.mode === "navigate" || CODE_PATTERN.test(new URL(e.request.url).pathname);
 

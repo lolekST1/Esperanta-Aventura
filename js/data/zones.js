@@ -19,6 +19,7 @@ export const ZONES = {
     id: "fruktejo",
     name: "Fruktejo",
     mapEmoji: "🍎",
+    map: { x: 22, y: 74 },
     npc: {
       id: "vulpo",
       emoji: "🦊",
@@ -101,6 +102,7 @@ export const ZONES = {
     id: "vilago",
     name: "Vilaĝo",
     mapEmoji: "🏡",
+    map: { x: 48, y: 50 },
     npc: {
       id: "urso",
       emoji: "🐻",
@@ -201,6 +203,7 @@ export const ZONES = {
     id: "arbaro",
     name: "Arbaro",
     mapEmoji: "🌳",
+    map: { x: 75, y: 26 },
     npc: {
       id: "papago",
       emoji: "🦜",

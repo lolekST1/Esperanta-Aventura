@@ -18,7 +18,7 @@ function showScreen(name) {
 function goToMap() {
   game.deactivate();
   stopSpeech();
-  renderMap(game.save, enterZone);
+  renderMap(game, enterZone);
   showScreen("map-screen");
 }
 

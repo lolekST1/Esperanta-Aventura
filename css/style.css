@@ -188,52 +188,98 @@ h1, h2 {
   font-size: clamp(30px, 8vw, 44px);
 }
 
-.zone-list {
+.map-canvas {
+  position: relative;
+  width: min(92vw, 480px);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+
+.map-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.map-sand { fill: #f5e6b8; }
+.map-land { fill: #7ec850; }
+
+.map-road {
+  stroke: #fffdf0cc;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 0.2 4.2;
+}
+
+.map-markers {
+  position: absolute;
+  inset: 0;
+}
+
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -78%);
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  width: min(92vw, 440px);
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 64px;
 }
 
-.zone-card {
+.map-marker-emoji {
+  font-size: clamp(30px, 9vw, 40px);
+  width: clamp(56px, 15vw, 68px);
+  height: clamp(56px, 15vw, 68px);
+  background: #ffffffd8;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 16px;
-  border: none;
-  border-radius: 28px;
-  background: #ffffffd0;
-  box-shadow: 0 6px 0 #00000018;
-  padding: 18px 22px;
-  font-family: inherit;
-  cursor: pointer;
-  min-height: 92px;
-  transition: transform 0.15s;
+  justify-content: center;
+  box-shadow: 0 5px 0 #00000018;
 }
 
-.zone-card:active { transform: scale(0.96); }
-
-.zone-card .zone-emoji { font-size: 52px; }
-
-.zone-card .zone-name {
-  flex: 1;
-  text-align: left;
-  font-size: clamp(22px, 6vw, 30px);
+.map-marker-label {
+  font-size: 13px;
+  font-weight: bold;
   color: #2c5e1a;
-  font-weight: bold;
+  background: #ffffffcc;
+  padding: 1px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
 }
 
-.zone-card .zone-status {
-  font-size: clamp(20px, 5vw, 26px);
+.map-marker-status {
+  font-size: 12px;
+  font-weight: bold;
   color: #b8860b;
-  font-weight: bold;
 }
 
-.zone-card.locked {
+.map-marker.locked .map-marker-emoji {
   filter: grayscale(0.9);
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
-.zone-card.wobble { animation: wobble 0.5s ease; }
+.map-marker.wobble { animation: wobble 0.5s ease; }
+
+.map-avatar {
+  position: absolute;
+  transform: translate(-50%, -82%);
+  transition: left 0.9s ease, top 0.9s ease;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.map-avatar #map-avatar-emoji {
+  display: inline-block;
+  font-size: clamp(34px, 10vw, 46px);
+  filter: drop-shadow(0 3px 2px #00000055);
+}
+
+.map-avatar.walking #map-avatar-emoji { animation: avatar-bob 0.3s ease-in-out infinite; }
 
 /* ---------- Scena ---------- */
 
@@ -548,6 +594,11 @@ h1, h2 {
 @keyframes enter {
   0% { transform: translateY(60vh) scale(0.3); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes avatar-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-9px) scale(1.06); }
 }
 
 @keyframes hop {

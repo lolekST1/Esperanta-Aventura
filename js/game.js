@@ -24,6 +24,7 @@ function loadSave() {
   save.words ??= [];
   save.zones ??= {};
   save.avatar ??= null;
+  save.mapPosition ??= null;
   return save;
 }
 
@@ -67,6 +68,13 @@ export class Game {
     this.save.avatar = avatar;
     persist(this.save);
     this.updateHud();
+  }
+
+  // Wywoływane, gdy awatar dojdzie do strefy na mapie — żeby po powrocie
+  // z gry stał dokładnie tam, gdzie dziecko go zostawiło.
+  setMapPosition(zoneId) {
+    this.save.mapPosition = zoneId;
+    persist(this.save);
   }
 
   loadZone(zone) {

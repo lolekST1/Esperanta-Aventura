@@ -44,7 +44,15 @@
       <button id="btn-story-replay" class="icon-button" aria-label="rakonto">📜</button>
       <button id="btn-voice" class="icon-button" aria-label="voĉo">⚙️</button>
     </div>
-    <div id="zone-list" class="zone-list"></div>
+    <div id="map-canvas" class="map-canvas">
+      <svg id="map-svg" class="map-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <ellipse class="map-sand" cx="45" cy="50" rx="46" ry="32" transform="rotate(-32 45 50)" />
+        <ellipse class="map-land" cx="45" cy="50" rx="39" ry="25" transform="rotate(-32 45 50)" />
+        <path id="map-road" class="map-road" fill="none" />
+      </svg>
+      <div id="map-markers" class="map-markers"></div>
+      <div id="map-avatar" class="map-avatar"><span id="map-avatar-emoji"></span></div>
+    </div>
   </section>
 
   <!-- Główny ekran gry -->

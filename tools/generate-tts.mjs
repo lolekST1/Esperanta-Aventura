@@ -62,8 +62,34 @@ const NARRATOR_UI_LINES = [
 // angielskie "sh...", "papilio" jak jedna sklejona sylaba zamiast
 // papili-o). Działa WYŁĄCZNIE na tekst wysyłany do OpenAI — manifest
 // nadal jest kluczowany oryginalnym tekstem z zones.js/story.js.
+// Całe słowa, które model skłonny jest odczytać jak identycznie/podobnie
+// zapisane słowo angielskie zamiast esperanckiej fonetyki (ten sam problem
+// co "birdon"→angielskie "bird" udokumentowany w js/audio.js). Rozbicie
+// myślnikiem łamie dopasowanie do angielskiego słowa, nie zmieniając
+// esperanckiej wymowy (myślnik brzmi co najwyżej jak mikropauza).
+const LOOKALIKE_WORDS = {
+  Brave: "Bra-ve",
+  brave: "bra-ve",
+};
+
+// Słowa złożone, gdzie granica członów musi zostać słyszalna, bo inaczej
+// spółgłoska zlewa się z kolejnym członem w obcy dźwięk (np. "ĉielarko"
+// czytane jakby zaczynało się od "larko" zamiast ĉiel+arko). Klucze to
+// forma PO regule ziewu samogłoskowego niżej (i([aeou])→i-$1) — bez tego
+// "ĉielarko" najpierw stałoby się "ĉi-elarko" i nie dopasowałoby się tu.
+// Wartość to ostateczna, pożądana forma "ĉiel-arko" (jeden wyraźny podział
+// na granicy członów, bez dodatkowego rozbicia ĉi-el).
+const COMPOUND_BREAKS = {
+  "ĉi-elarko": "ĉiel-arko",
+  "ĉi-elarkon": "ĉiel-arkon",
+};
+
 function preprocessEsperantoForTTS(text) {
-  return text
+  let out = text;
+  for (const [word, safe] of Object.entries(LOOKALIKE_WORDS)) {
+    out = out.replace(new RegExp(`\\b${word}\\b`, "g"), safe);
+  }
+  out = out
     .replace(/SC/g, "S-TS")
     .replace(/Sc/g, "S-ts")
     .replace(/sc/g, "s-ts")
@@ -78,7 +104,19 @@ function preprocessEsperantoForTTS(text) {
     .replace(/mn/g, "m-n")
     .replace(/Mn/g, "M-n")
     // W esperanto każda samogłoska jest osobną sylabą — nie ma dyftongów.
-    .replace(/i([aeou])/gi, "i-$1");
+    .replace(/i([aeou])/gi, "i-$1")
+    // Osobne "c" (poza "sc", już rozbite wyżej) = zawsze "ts" — bez tego
+    // model bywa skłonny czytać je jak angielskie "k" albo "s" (np.
+    // "donaco" jak angielskie "donako").
+    .replace(/C/g, "Ts")
+    .replace(/c/g, "ts");
+  for (const [word, safe] of Object.entries(COMPOUND_BREAKS)) {
+    // Bez \b: \b w JS opiera się na \w (ASCII), więc nie rozpoznaje granicy
+    // przed "ĉ" — zwykłe globalne podstawienie działa poprawnie i jest
+    // bezpieczne dla tych konkretnych, unikalnych słów złożonych.
+    out = out.split(word).join(safe);
+  }
+  return out;
 }
 
 const PRONUNCIATION_RULES = `You are reading text written in Esperanto.

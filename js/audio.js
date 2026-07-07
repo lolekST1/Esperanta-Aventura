@@ -83,7 +83,10 @@ function resolveSpeech() {
 }
 
 // Polski głos czyta esperanto niemal poprawnie, jeśli zapisać tekst
-// polską ortografią (ŝ→sz, ĝ→dż, v→w, ŭ→ł...).
+// polską ortografią (ŝ→sz, ĝ→dż, v→w, ŭ→ł...). Esperanckie "c" to zawsze
+// /ts/ — zapisujemy to jawnie jako "ts" (polskie "ci" spalatalizowałoby
+// dźwięk na "ć", czego esperanto nie robi), co przy okazji rozbija
+// wzorzec "sci" (patrz breakKnownLookalikes niżej).
 const PL_MAP = {
   "ĉ": "cz", "Ĉ": "Cz",
   "ĝ": "dż", "Ĝ": "Dż",
@@ -92,10 +95,32 @@ const PL_MAP = {
   "ŝ": "sz", "Ŝ": "Sz",
   "ŭ": "ł", "Ŭ": "Ł",
   "v": "w", "V": "W",
+  "c": "ts", "C": "Ts",
 };
 
 function toPolish(text) {
-  return text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvV]/g, (ch) => PL_MAP[ch] ?? ch);
+  return text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvVcC]/g, (ch) => PL_MAP[ch] ?? ch);
+}
+
+// Niektóre neuronowe silniki TTS (zaobserwowane na Androidzie) wykrywają
+// pojedyncze słowa "wyglądające" jak angielskie w środku obcojęzycznego
+// zdania i przełączają się w ich trakcie na angielską wymowę — np.
+// "birdon" czytane jak angielskie "bird". Rozbijamy znane w grze słowa
+// na sylaby łącznikiem (zgodna z esperancką sylabizacją: bir-do,
+// dor-mi, sal-ti) — usuwa to przypadkowe dopasowanie, nie zmieniając
+// wymowy (łącznik brzmi co najwyżej jak mikropauza między sylabami).
+const SYLLABLE_BREAKS = {
+  birdon: "bir-don", birdo: "bir-do",
+  saltantan: "sal-tan-tan", salti: "sal-ti",
+  dormantan: "dor-man-tan", dormi: "dor-mi",
+};
+
+function breakKnownLookalikes(text) {
+  let out = text;
+  for (const [word, safe] of Object.entries(SYLLABLE_BREAKS)) {
+    out = out.replace(new RegExp(`\\b${word}\\b`, "gi"), safe);
+  }
+  return out;
 }
 
 // Angielski głos stosuje angielskie reguły czytania ("bird", "science"),
@@ -128,9 +153,9 @@ function toEnglishPhonetic(text) {
 
 function prepareText(text, lang) {
   const l = (lang || "").toLowerCase();
-  if (l.startsWith("pl")) return toPolish(text);
-  if (l.startsWith("en")) return toEnglishPhonetic(text);
-  return text;
+  if (l.startsWith("pl")) return breakKnownLookalikes(toPolish(text));
+  if (l.startsWith("en")) return toEnglishPhonetic(text); // już w pełni odpisane fonetycznie
+  return breakKnownLookalikes(text);
 }
 
 // Do diagnostyki i testów: jak dokładnie zostanie przeczytany dany tekst.
@@ -177,43 +202,14 @@ export function speak(text, profile = NARRATOR) {
     }
 
     const synth = window.speechSynthesis;
-    let started = false;
-    let retried = false;
-
-    const makeUtterance = (t, v, lang) => {
-      const u = new SpeechSynthesisUtterance(t);
-      if (v) u.voice = v;
-      if (lang) u.lang = lang;
-      u.rate = profile.rate ?? NARRATOR.rate;
-      u.pitch = profile.pitch ?? NARRATOR.pitch;
-      u.onstart = () => {
-        started = true;
-      };
-      u.onend = finish;
-      return u;
-    };
-
-    // Plan B: wybrany głos milczy — mów domyślnym głosem systemu
-    // (bez wymuszonego voice), w języku systemu.
-    const retry = () => {
-      if (retried || done) return;
-      retried = true;
-      synth.cancel();
-      const sysLang = navigator.language || "en";
-      const u2 = makeUtterance(prepareText(text, sysLang), null, sysLang);
-      u2.onerror = finish;
-      synth.speak(u2);
-      // Chrome desktop czasem „pauzuje" kolejkę — odblokuj.
-      try { synth.resume(); } catch {}
-    };
-
     const { voice: v, lang } = resolveSpeech();
-    const u = makeUtterance(prepareText(text, lang), v, lang);
-    u.onerror = (e) => {
-      // Nasze własne cancel() (wyjście do mapy) nie jest awarią.
-      if (e?.error === "canceled" || e?.error === "interrupted") finish();
-      else retry();
-    };
+    const u = new SpeechSynthesisUtterance(prepareText(text, lang));
+    if (v) u.voice = v;
+    if (lang) u.lang = lang;
+    u.rate = profile.rate ?? NARRATOR.rate;
+    u.pitch = profile.pitch ?? NARRATOR.pitch;
+    u.onend = finish;
+    u.onerror = finish; // "canceled"/"interrupted" z naszego cancel() też ląduje tu — to nie awaria
 
     // KLUCZOWE: speak() synchronicznie w geście użytkownika — inaczej
     // telefony blokują mowę. Żadnego setTimeout przed speak().
@@ -221,13 +217,13 @@ export function speak(text, profile = NARRATOR) {
     synth.speak(u);
     try { synth.resume(); } catch {}
 
-    // Głos się nie odezwał (np. uszkodzony) — spróbuj domyślnym.
-    setTimeout(() => {
-      if (!started && !done) retry();
-    }, 1500);
-
-    // Awaria TTS nigdy nie może zawiesić gry.
-    setTimeout(finish, 1800 + text.length * 130);
+    // UWAGA: niektóre silniki TTS (zaobserwowane na Androidzie) nigdy nie
+    // odpalają onstart, a mowa i tak leci — dlatego NIE anulujemy na
+    // podstawie "cisza po X ms" (wcześniejsza wersja to robiła i przez to
+    // ucinała działającą, tylko wolno startującą mowę, w praktyce
+    // wyciszając grę całkowicie). Ten timeout to wyłącznie siatka
+    // bezpieczeństwa dla PRZEPŁYWU gry — synteza może grać dalej w tle.
+    setTimeout(finish, 3500 + text.length * 130);
   });
 }
 

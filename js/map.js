@@ -49,15 +49,19 @@ export function renderMap(game, onSelect) {
     const progress = save.zones[zoneId];
     const unlocked = i === 0 || save.zones[ZONE_ORDER[i - 1]]?.done;
 
+    // Nieodwiedzona jeszcze, ale odblokowana strefa delikatnie pulsuje —
+    // zaprasza do stuknięcia. Twarz NPC na znaczniku ożywia mapę nawet
+    // przed wejściem do strefy.
+    const isNew = unlocked && !progress?.done;
     const marker = document.createElement("button");
-    marker.className = "map-marker" + (unlocked ? "" : " locked");
+    marker.className = "map-marker" + (unlocked ? "" : " locked") + (isNew ? " new" : "");
     marker.style.left = `${zone.map.x}%`;
     marker.style.top = `${zone.map.y}%`;
     marker.dataset.id = zoneId;
 
     const status = !unlocked ? "🔒" : progress?.done ? `⭐${progress.stars}` : "🆕";
     marker.innerHTML = `
-      <span class="map-marker-emoji">${zone.mapEmoji}</span>
+      <span class="map-marker-emoji">${zone.mapEmoji}<span class="map-marker-npc">${zone.npc.emoji}</span></span>
       <span class="map-marker-label">${zone.name}</span>
       <span class="map-marker-status">${status}</span>
     `;

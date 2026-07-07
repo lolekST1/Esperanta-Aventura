@@ -5,7 +5,7 @@
 // spadamy na to, co jest w cache. Bez tego stara wersja gry potrafiła
 // zostać w PWA nawet po wdrożeniu poprawki, dopóki ktoś nie zamknął
 // i nie otworzył aplikacji kilka razy (mylące przy debugowaniu na żywo).
-const CACHE = "esperanta-aventuro-v15";
+const CACHE = "esperanta-aventuro-v16";
 const ASSETS = [
   ".",
   "index.html",

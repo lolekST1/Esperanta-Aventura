@@ -26,6 +26,7 @@ function loadSave() {
   save.avatar ??= null;
   save.mapPosition ??= null;
   save.storiesSeen ??= {};
+  save.islandCelebrated ??= false;
   return save;
 }
 
@@ -75,6 +76,11 @@ export class Game {
   // z gry stał dokładnie tam, gdzie dziecko go zostawiło.
   setMapPosition(zoneId) {
     this.save.mapPosition = zoneId;
+    persist(this.save);
+  }
+
+  markIslandCelebrated() {
+    this.save.islandCelebrated = true;
     persist(this.save);
   }
 

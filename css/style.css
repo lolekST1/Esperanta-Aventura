@@ -88,6 +88,30 @@ h1, h2 {
   justify-content: center;
 }
 
+.island-win-npcs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: clamp(48px, 16vw, 80px);
+}
+
+.island-win-npcs span { animation: bounce 1.6s ease-in-out infinite; }
+.island-win-npcs span:nth-child(2) { animation-delay: 0.2s; }
+.island-win-npcs span:nth-child(3) { animation-delay: 0.4s; }
+.island-win-npcs span:nth-child(4) { animation-delay: 0.6s; }
+
+.island-win-text {
+  font-size: clamp(18px, 5vw, 26px);
+  color: #2c5e1a;
+  line-height: 1.5;
+  margin: 16px 0;
+}
+
+.island-win-stars {
+  font-size: clamp(24px, 7vw, 36px);
+  margin-bottom: 24px;
+}
+
 /* ---------- Pasek górny (wspólny dla mapy i gry) ---------- */
 
 #topbar {
@@ -231,6 +255,7 @@ h1, h2 {
 }
 
 .map-marker-emoji {
+  position: relative;
   font-size: clamp(30px, 9vw, 40px);
   width: clamp(56px, 15vw, 68px);
   height: clamp(56px, 15vw, 68px);
@@ -240,6 +265,21 @@ h1, h2 {
   align-items: center;
   justify-content: center;
   box-shadow: 0 5px 0 #00000018;
+}
+
+.map-marker-npc {
+  position: absolute;
+  bottom: -6px;
+  right: -8px;
+  font-size: 0.55em;
+  background: #fff;
+  border-radius: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #00000022;
 }
 
 .map-marker-label {
@@ -264,6 +304,8 @@ h1, h2 {
 }
 
 .map-marker.wobble { animation: wobble 0.5s ease; }
+
+.map-marker.new .map-marker-emoji { animation: invite-pulse 1.8s ease-in-out infinite; }
 
 .map-avatar {
   position: absolute;
@@ -594,6 +636,11 @@ h1, h2 {
 @keyframes enter {
   0% { transform: translateY(60vh) scale(0.3); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes invite-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 5px 0 #00000018, 0 0 0 0 #ffd76a99; }
+  50% { transform: scale(1.08); box-shadow: 0 5px 0 #00000018, 0 0 0 8px #ffd76a00; }
 }
 
 @keyframes avatar-bob {

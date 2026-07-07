@@ -33,7 +33,7 @@ export const ZONES = {
       "Mi volas fari fruktokorbon por miaj amikoj.",
       "Ĉu vi helpos min trovi fruktojn?",
     ],
-    winText: "Vi trovis ĉiujn fruktojn!",
+    winText: "Dankon! Nun mia korbo estas plena je fruktoj!",
     retryPhrases: [
       "Hmm... provu denove!",
       "Ne tute! Provu ankoraŭ!",
@@ -120,7 +120,7 @@ export const ZONES = {
       "Mi serĉas manĝaĵojn por mia hejmo...",
       "Ĉu vi helpos min trovi ilin en la vilaĝo?",
     ],
-    winText: "Vi konas la vilaĝon!",
+    winText: "Dankon, kara! Nun mi havas ĉion, kion mi bezonis!",
     retryPhrases: [
       "Hmm... provu denove, kara.",
       "Ne tute... trankvile, provu ankoraŭ!",
@@ -225,7 +225,7 @@ export const ZONES = {
       "La bestoj kaŝiĝis en la arbaro! Kaŝiĝis!",
       "Ni trovu ilin kune! Kune!",
     ],
-    winText: "Vi konas la arbaron!",
+    winText: "Ni trovis ĉiujn! Dankon! Dankon!",
     retryPhrases: [
       "Provu denove! Provu denove!",
       "Ne, ne! Ankoraŭ! Ankoraŭ!",

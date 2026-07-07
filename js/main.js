@@ -2,9 +2,10 @@ import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride, diagno
 import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
+import { ZONES, ZONE_ORDER } from "./data/zones.js";
 
 const el = (id) => document.getElementById(id);
-const SCREENS = ["start-screen", "story-screen", "map-screen", "game-screen", "win-screen"];
+const SCREENS = ["start-screen", "story-screen", "map-screen", "game-screen", "win-screen", "island-win-screen"];
 
 const game = new Game();
 
@@ -15,12 +16,42 @@ function showScreen(name) {
   el("btn-map").classList.toggle("hidden", name === "map-screen");
 }
 
-function goToMap() {
-  game.deactivate();
-  stopSpeech();
+function allZonesDone(save) {
+  return ZONE_ORDER.every((id) => save.zones[id]?.done);
+}
+
+function showRealMap() {
   renderMap(game, enterZone);
   showScreen("map-screen");
 }
+
+function goToMap() {
+  game.deactivate();
+  stopSpeech();
+
+  // Pierwszy raz, gdy dziecko ukończy WSZYSTKIE obecne strefy — wspólne
+  // świętowanie całej wyspy, zamiast po prostu wracać na mapę.
+  if (allZonesDone(game.save) && !game.save.islandCelebrated) {
+    showIslandCelebration();
+    return;
+  }
+  showRealMap();
+}
+
+function showIslandCelebration() {
+  game.markIslandCelebrated();
+  const npcs = el("island-win-npcs");
+  npcs.innerHTML = `<span>${game.save.avatar ?? "🧒"}</span>` +
+    ZONE_ORDER.map((id) => `<span>${ZONES[id].npc.emoji}</span>`).join("");
+  el("island-win-stars").textContent = `⭐ ${game.save.stars}`;
+  showScreen("island-win-screen");
+  speak("Vi esploris la tutan Esperantion! Ĉiuj estas dankemaj al vi!");
+}
+
+el("btn-island-continue").addEventListener("click", () => {
+  stopSpeech();
+  showRealMap();
+});
 
 function enterZone(zone) {
   game.loadZone(zone);

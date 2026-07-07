@@ -114,6 +114,9 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ lepsza wymowa TTS: preferencja głosów eo→pl→hr/sk/cs/it/es (nigdy angielski, gdy jest alternatywa) + transliteracja esperanta na polską ortografię dla głosu pl
 - ✅ prawdziwa mapa wyspy: SVG-owa wyspa (plaża + ląd), przerywana ścieżka łącząca strefy w kolejności `ZONE_ORDER`, awatar dziecka fizycznie chodzi między znacznikami stref (animacja spaceru, pozycja zapamiętywana między sesjami — `js/map.js`, współrzędne w `zone.map` w `zones.js`)
 - ✅ miniopowiastki per strefa: NPC po powitaniu tłumaczy, po co prosi o pomoc (`zone.story` w `zones.js`) — gra się raz, przy pierwszym wejściu do strefy (`save.storiesSeen`), przy kolejnych wizytach pomijana
+- ✅ zamknięta pętla fabularna: `winText` każdej strefy nawiązuje wprost do celu z `story` (Vulpo dziękuje za pełny koszyk, Urso za znalezione jedzenie, zwierzęta w Arbaro są odnalezione)
+- ✅ ożywiona mapa: znacznik nieodwiedzonej, odblokowanej strefy delikatnie pulsuje (zaproszenie do stuknięcia), każdy znacznik pokazuje też twarz NPC danej strefy
+- ✅ wielki finał wyspy: po ukończeniu WSZYSTKICH obecnych stref — jednorazowy ekran świętowania z całą obsadą NPC i awatarem, zapowiedź kolejnych przygód (`save.islandCelebrated`)
 
 **Faza 3 — głębia mechanik: słowa jako umiejętności**
 - zebrane słówka odblokowują akcje w świecie (akvo → podlewanie, ruĝa → czerwone drzwi)

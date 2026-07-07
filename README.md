@@ -54,8 +54,11 @@ css/style.css         # mobile-first, cele dotykowe ≥ 60 px, animacje CSS
 js/
   main.js             # bootstrap, obsługa ekranów, rejestracja SW
   game.js             # silnik pętli gry (niezależny od treści!)
-  audio.js            # TTS (Web Speech) + efekty (Web Audio, syntetyzowane)
+  audio.js            # nagrane mp3 (OpenAI TTS) → fallback Web Speech + efekty (Web Audio)
   data/zones.js       # ★ CAŁA treść gry: strefy, NPC, zadania, słówka
+  data/audioManifest.js  # (auto) tekst → plik mp3, generowane przez scripts/generate-tts.mjs
+scripts/generate-tts.mjs  # generator nagrań lektorskich (dev-only, node, wymaga OPENAI_API_KEY)
+assets/audio/         # (auto) wygenerowane mp3 per bohater/narrator/słówko
 sw.js                 # cache offline
 manifest.webmanifest  # instalacja PWA, blokada orientacji portrait
 assets/icon.svg       # ikona
@@ -96,15 +99,25 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ strefa Vilaĝo 🏡 z misiem Urso (dom, jedzenie, granda/malgranda przez skalę obiektów)
 - ✅ strefa Arbaro 🌳 z papugą Papago (zwierzęta, czasowniki ruchu — obiekty *animowane*: „Tuŝu la saltantan beston!")
 - ✅ zapis postępu per strefa (gwiazdki, ukończenie)
-- ⬜ nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w `zones.js`)
-  — **notatka z testów (2026-07-07):** darmowe głosy przeglądarki (Web Speech
-    API) są niespójne między urządzeniami i wymagają transliteracji-obejść
-    (patrz `js/audio.js`); test z OpenAI TTS wykazał, że głosy **Cedar, Marin
-    i Nova** poprawnie wymawiają esperanckie testowe słowa (sciuro, birdo,
-    hundino) bez żadnych sztuczek. Jeśli nagrania lektorskie nie wejdą od
-    razu, wygenerowanie fraz przez OpenAI TTS (jednorazowo, offline, jako
-    pliki mp3) tymi głosami może być szybszą drogą do dobrej wymowy niż
-    dalsze łatanie Web Speech API
+- ✅ nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w
+  `js/data/audioManifest.js`) — wygenerowane offline przez OpenAI TTS
+  (`gpt-4o-mini-tts`), `js/audio.js` odtwarza gotowy plik jako pierwszy
+  wybór i spada na Web Speech API tylko gdy frazy nie ma w manifeście
+  albo odtworzenie się nie uda (offline bez cache, błąd pliku)
+  — **głosy per bohater:** 🦊 Vulpo → *nova* (szybki, energiczny),
+    🐻 Urso → *sage* (wolny, ciepły), 🦜 Papago → *coral* (wysoki,
+    gadatliwy), narrator i słówka-nagrody → *marin*. Zakazane po testach:
+    *shimmer*, *cedar*, *verse* (gorsza wymowa esperanckich skupisk
+    spółgłosek, np. "sciuro" czytane jak angielskie "sh...")
+  — **klucz do poprawnej wymowy:** (1) rozbicie trudnych skupisek
+    spółgłosek myślnikiem w tekście wysyłanym do API (`sc→s-ts`, `kn→k-n`,
+    `gn→g-n`, `pn→p-n`, `ps→p-s`, `mn→m-n` — patrz
+    `preprocessEsperantoForTTS` w `scripts/generate-tts.mjs`), (2) długa
+    instrukcja `instructions` opisująca esperancką fonetykę wprost
+    (każda litera = jeden dźwięk, akcent na przedostatniej sylabie,
+    `sc` zawsze jako "sts", nigdy "sh")
+  — regeneracja: `OPENAI_API_KEY=sk-... npm run generate-tts` (dogenerowuje
+    tylko brakujące pliki po zmianie fraz w `zones.js`/`story.js`)
 
 **Faza 2.5 (✅)** — fabuła, personalizacja i żywe audio
 - ✅ bajka wprowadzająca: lot balonem na wyspę Esperantio (powtarzalna z mapy 📜)

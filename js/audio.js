@@ -1,16 +1,25 @@
-// Audio: mowa (Web Speech API) + proste efekty dźwiękowe (Web Audio API).
+// Audio: mowa + proste efekty dźwiękowe (Web Audio API).
 //
-// Dobór głosu: esperancki jest rzadki, więc szukamy w kolejności języków
-// o fonetyce najbliższej esperantu. Angielski tylko w ostateczności.
-// Gdy jednak zostaje angielski (lub polski), tekst jest transliterowany
-// na ortografię tego języka, żeby wymowa była poprawna — np. dla
-// angielskiego "birdon" → "beerdohn" (inaczej lektor czyta "berdon").
+// Mowa ma dwa tory:
+//   1. Nagrane lektorskie mp3 (OpenAI TTS, wygenerowane offline przez
+//      scripts/generate-tts.mjs, mapowane w AUDIO_MANIFEST) — pierwszy
+//      wybór, gdy fraza + głos NPC mają gotowe nagranie.
+//   2. Web Speech API — fallback, gdy nagrania nie ma albo się nie
+//      odtworzyło (np. brak sieci przy pierwszym, nieocache'owanym
+//      uruchomieniu). Esperancki jest rzadki jako głos systemowy, więc
+//      szukamy w kolejności języków o fonetyce najbliższej esperantu;
+//      angielski tylko w ostateczności, i wtedy tekst jest transliterowany
+//      na jego ortografię, żeby wymowa była poprawna — np. dla angielskiego
+//      "birdon" → "beerdohn" (inaczej lektor czyta "berdon").
 //
 // speak() zwraca Promise kończącą się wraz z mową — całe tempo gry
 // (pauzy, przejścia) jest sterowane faktyczną długością wypowiedzi.
 
+import { AUDIO_MANIFEST } from "./data/audioManifest.js";
+
 let voice = null;
 let ctx = null;
+let audioEl = null;
 
 const VOICE_KEY = "esperanta-aventuro-voice";
 const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
@@ -169,12 +178,24 @@ export function previewSpeech(text) {
   return { voice: v ? `${v.name} (${v.lang})` : `(domyślny, ${lang})`, text: prepareText(text, lang) };
 }
 
-// Profil narratora; NPC mają własne profile w zones.js.
-export const NARRATOR = { rate: 0.85, pitch: 1.0 };
+// Profil narratora; NPC mają własne profile w zones.js. `id` łączy profil
+// z lektorskim nagraniem OpenAI TTS w AUDIO_MANIFEST (patrz niżej) —
+// profile bez id (ad-hoc obiekty {rate,pitch}) zawsze idą przez Web Speech.
+export const NARRATOR = { rate: 0.85, pitch: 1.0, id: "narrator" };
+
+// Profil do pojedynczych słówek (nagroda po zadaniu, klik w Vortaro) —
+// wolno i wyraźnie, jak nauczyciel powtarzający nowe słowo.
+export const VOCAB = { rate: 0.7, pitch: 1.15, id: "vocab" };
+
+// Cichy plik używany wyłącznie do odblokowania odtwarzania <audio> —
+// telefony blokują je tak samo jak speechSynthesis, dopóki nie padnie
+// odtworzenie SYNCHRONICZNIE w geście użytkownika.
+const UNLOCK_SRC = "assets/audio/_unlock.mp3";
 
 // Telefony blokują TTS, dopóki pierwsze speak() nie padnie SYNCHRONICZNIE
 // w geście użytkownika. initAudio() jest wołane w handlerze kliknięcia
-// „Ludi!", więc odblokowujemy tu silnik cichą wypowiedzią.
+// „Ludi!", więc odblokowujemy tu silnik cichą wypowiedzią — zarówno Web
+// Speech, jak i (osobno) HTMLAudioElement używany do nagranych mp3.
 export function initAudio() {
   if ("speechSynthesis" in window) {
     pickVoice();
@@ -189,9 +210,72 @@ export function initAudio() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (AudioCtx && !ctx) ctx = new AudioCtx();
   if (ctx?.state === "suspended") ctx.resume();
+
+  if (!audioEl) audioEl = new Audio();
+  try {
+    audioEl.src = UNLOCK_SRC;
+    audioEl.volume = 0;
+    const p = audioEl.play();
+    if (p?.then) {
+      p.then(() => {
+        // Do chwili, gdy ta obietnica się rozstrzygnie, mogła już ruszyć
+        // prawdziwa kwestia NPC (współdzielimy audioEl) — pauzujemy TYLKO
+        // jeśli wciąż gra plik rozgrzewkowy, żeby nie ucinać właściwego
+        // odtwarzania.
+        if (audioEl.currentSrc.endsWith(UNLOCK_SRC)) audioEl.pause();
+        audioEl.volume = 1;
+      }).catch(() => { audioEl.volume = 1; });
+    }
+  } catch {}
 }
 
-export function speak(text, profile = NARRATOR) {
+// Nagrane lektorskie mp3 (OpenAI TTS, wygenerowane offline przez
+// scripts/generate-tts.mjs) — mapowane po (id profilu głosu, dokładny
+// tekst) w AUDIO_MANIFEST. Profile bez `id` (ad-hoc {rate,pitch}) zawsze
+// idą przez Web Speech.
+function findRecording(text, profile) {
+  const id = profile?.id;
+  return id ? AUDIO_MANIFEST[`${id}::${text}`] ?? null : null;
+}
+
+let pendingRecordingFinish = null;
+
+// Rozstrzyga się statusem: "ok" (odegrało do końca), "error" (nie dało
+// się odtworzyć — speak() spada wtedy na Web Speech) albo "stopped"
+// (przerwane przez stopSpeech(), NIE powinno wywoływać fallbacku).
+function playRecording(src) {
+  return new Promise((resolve) => {
+    if (!audioEl) audioEl = new Audio();
+    let done = false;
+    const finish = (status) => {
+      if (done) return;
+      done = true;
+      audioEl.onended = null;
+      audioEl.onerror = null;
+      pendingRecordingFinish = null;
+      resolve(status);
+    };
+    pendingRecordingFinish = finish;
+    audioEl.onended = () => finish("ok");
+    audioEl.onerror = () => finish("error");
+    audioEl.volume = 1;
+    audioEl.currentTime = 0;
+    audioEl.src = src;
+    const p = audioEl.play();
+    if (p?.catch) p.catch(() => finish("error"));
+  });
+}
+
+export async function speak(text, profile = NARRATOR) {
+  const recording = findRecording(text, profile);
+  if (recording) {
+    const status = await playRecording(recording);
+    if (status !== "error") return;
+  }
+  return speakSynth(text, profile);
+}
+
+function speakSynth(text, profile) {
   return new Promise((resolve) => {
     let done = false;
     const finish = () => {
@@ -234,6 +318,8 @@ export function speak(text, profile = NARRATOR) {
 
 export function stopSpeech() {
   window.speechSynthesis?.cancel();
+  audioEl?.pause();
+  pendingRecordingFinish?.("stopped");
 }
 
 // Diagnostyka na żywo dla ekranu ⚙️ — gdy nawet ręczny wybór głosu milczy,
@@ -242,7 +328,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v16-insula-festo";
+export const GAME_VERSION = "v17-openai-tts";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

@@ -6,12 +6,37 @@
 // sekwencje async, gdy dziecko wyjdzie do mapy w połowie zadania.
 
 import { speak, playSuccess, playRetry, playTap, wait, NARRATOR } from "./audio.js";
+import { ZONES } from "./data/zones.js";
 
 const SAVE_KEY = "esperanta-aventuro-save-v1";
 
 const el = (id) => document.getElementById(id);
 
 const CONFETTI = ["⭐", "🎉", "✨", "🌟", "💛"];
+
+// Duszek ręki: ile dziecko ma czasu, zanim pokażemy demonstrację.
+const HINT_DELAY_MS = 4000;
+
+// Adaptacyjne powtórki: ile słówek maksymalnie dokłada się na koniec strefy.
+const MAX_REVIEW_TASKS = 2;
+
+// Mapa słowo → jego oryginalne zadanie, budowana raz z całego zestawu stref.
+// Pozwala niewidocznie "pożyczyć" dowolne zadanie (z dowolnej strefy) jako
+// powtórkę — silnik wciąż nie zna ŻADNYCH konkretnych słówek, tylko
+// generycznie indeksuje pole reward.word, które już i tak jest w danych.
+let _wordTaskIndex = null;
+function wordTaskIndex() {
+  if (_wordTaskIndex) return _wordTaskIndex;
+  _wordTaskIndex = new Map();
+  for (const zone of Object.values(ZONES)) {
+    for (const task of zone.tasks) {
+      if (task.reward?.word && !_wordTaskIndex.has(task.reward.word)) {
+        _wordTaskIndex.set(task.reward.word, task);
+      }
+    }
+  }
+  return _wordTaskIndex;
+}
 
 function loadSave() {
   let save;
@@ -28,6 +53,8 @@ function loadSave() {
   save.storiesSeen ??= {};
   save.islandCelebrated ??= false;
   save.skillsDone ??= {};
+  save.hintsSeen ??= {};
+  save.mistakes ??= {};
   return save;
 }
 
@@ -68,8 +95,29 @@ export class Game {
     return this.zone?.npc.voice ?? NARRATOR;
   }
 
+  // Zadania strefy + niewidoczne powtórki dołożone na końcu (buildReviewQueue).
   get task() {
-    return this.zone?.tasks[this.taskIndex];
+    const base = this.zone?.tasks ?? [];
+    if (this.taskIndex < base.length) return base[this.taskIndex];
+    return this.reviewQueue?.[this.taskIndex - base.length];
+  }
+
+  // Adaptacyjne powtórki: po wyczerpaniu zwykłych zadań strefy dokładamy do
+  // MAX_REVIEW_TASKS zadań odpowiadających słówkom, w których dziecko
+  // ostatnio się myliło (gdziekolwiek w grze) — bez żadnego oznaczenia
+  // "to jest powtórka", więc dla dziecka wygląda jak zwykłe kolejne zadanie.
+  buildReviewQueue() {
+    const entries = Object.entries(this.save.mistakes).filter(([, n]) => n > 0);
+    if (!entries.length) return [];
+    entries.sort((a, b) => b[1] - a[1]); // najpierw najczęściej mylone
+    const index = wordTaskIndex();
+    const picked = [];
+    for (const [word] of entries) {
+      const task = index.get(word);
+      if (task) picked.push(task);
+      if (picked.length >= MAX_REVIEW_TASKS) break;
+    }
+    return picked;
   }
 
   setAvatar(avatar) {
@@ -91,18 +139,21 @@ export class Game {
   }
 
   loadZone(zone) {
+    this.cancelHint();
     this.zone = zone;
     this.taskIndex = 0;
     this.sessionStars = 0;
     this.locked = true;
     this.active = true;
     this.session++;
+    this.reviewQueue = this.buildReviewQueue();
     el("npc").textContent = zone.npc.emoji;
     this.renderSkillSpot();
   }
 
   // Wywoływane przy wyjściu do mapy — unieważnia trwające sekwencje.
   deactivate() {
+    this.cancelHint();
     this.active = false;
     this.session++;
   }
@@ -179,11 +230,14 @@ export class Game {
 
     this.locked = false;
     await speak(task.instruction, this.voice);
+    if (this.stale(s)) return;
+    this.scheduleHint(task, s);
   }
 
   onTap(btn, obj) {
     if (this.locked || !this.active) return;
     if (btn.classList.contains("seq-done")) return; // już zaliczony krok sekwencji
+    this.cancelHint();
     playTap();
     if (this.task.type === "sequence") return this.onSeqTap(btn, obj);
     if (obj.id === this.task.correct) {
@@ -199,12 +253,19 @@ export class Game {
   onSeqTap(btn, obj) {
     const seq = this.task.sequence;
     if (obj.id === seq[this.seqIndex]) {
+      const num = document.createElement("span");
+      num.className = "seq-num";
+      num.textContent = String(this.seqIndex + 1); // widoczna kolejność, nie sam fakt trafienia
+      btn.appendChild(num);
       btn.classList.add("seq-done");
       this.seqIndex++;
       if (this.seqIndex >= seq.length) this.onCorrect(btn);
     } else {
       this.seqIndex = 0;
-      for (const b of el("objects").children) b.classList.remove("seq-done");
+      for (const b of el("objects").children) {
+        b.classList.remove("seq-done");
+        b.querySelectorAll(".seq-num").forEach((n) => n.remove());
+      }
       this.onWrong(btn);
     }
   }
@@ -216,6 +277,7 @@ export class Game {
     btn.style.touchAction = "none";
     btn.addEventListener("pointerdown", (e) => {
       if (this.locked || !this.active) return;
+      this.cancelHint();
       btn.setPointerCapture(e.pointerId);
       const startX = e.clientX;
       const startY = e.clientY;
@@ -290,10 +352,133 @@ export class Game {
     }
   }
 
+  // ---------- Duszek ręki (demonstracja pierwszego zadania każdego typu) ----------
+  // Przy PIERWSZYM zadaniu danego typu ("tap"/"drag"/"sequence") w całej grze,
+  // jeśli dziecko samo nie zareaguje w ciągu chwili, na scenie pojawia się
+  // dłoń-duszek i pokazuje dokładnie co zrobić — nie klika za dziecko, tylko
+  // demonstruje. Znacznik hintsSeen zapisujemy natychmiast przy planowaniu,
+  // więc każdy typ dostaje tylko jedną szansę na pokazanie się w całej grze
+  // (kolejne zadania tego samego typu już nigdy nie pokazują duszka).
+  scheduleHint(task, s) {
+    const type = task.type ?? "tap";
+    if (this.save.hintsSeen[type]) return;
+    this.save.hintsSeen[type] = true;
+    persist(this.save);
+    this.hintTimer = setTimeout(() => {
+      if (this.stale(s) || this.locked) return;
+      this.showHint(task, s);
+    }, HINT_DELAY_MS);
+  }
+
+  cancelHint() {
+    clearTimeout(this.hintTimer);
+    this.hintToken = (this.hintToken ?? 0) + 1;
+    el("ghost-hand")?.classList.remove("visible", "tap");
+  }
+
+  async showHint(task, s) {
+    const token = this.hintToken ?? 0;
+    const live = () => this.hintToken === token && !this.stale(s);
+    const hand = el("ghost-hand");
+    const objOf = (id) => el("objects").querySelector(`[data-id="${id}"]`);
+    const centerOf = (elm) => {
+      const r = elm.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    const placeInstant = (pos) => {
+      hand.style.transition = "none";
+      hand.style.left = `${pos.x}px`;
+      hand.style.top = `${pos.y}px`;
+      hand.offsetHeight; // wymuś reflow, żeby kolejny ruch znów miał przejście
+      hand.style.transition = "";
+    };
+    const moveTo = async (pos) => {
+      hand.style.left = `${pos.x}px`;
+      hand.style.top = `${pos.y}px`;
+      await wait(650);
+    };
+    const tapPulse = async () => {
+      hand.classList.add("tap");
+      await wait(400);
+      hand.classList.remove("tap");
+    };
+
+    const type = task.type ?? "tap";
+
+    // Jedno przejście demonstracji; zwraca false, gdy dziecko zdążyło
+    // zareagować (cancelHint unieważnia token) w trakcie animacji.
+    const passTap = async () => {
+      const obj = objOf(task.correct);
+      if (!obj) return false;
+      placeInstant(centerOf(obj));
+      hand.classList.add("visible");
+      await wait(300);
+      if (!live()) return false;
+      await tapPulse();
+      return live();
+    };
+
+    const passSequence = async () => {
+      const first = objOf(task.sequence[0]);
+      if (!first) return false;
+      placeInstant(centerOf(first));
+      hand.classList.add("visible");
+      for (const id of task.sequence) {
+        if (!live()) return false;
+        const obj = objOf(id);
+        if (!obj) return false;
+        await moveTo(centerOf(obj));
+        if (!live()) return false;
+        await tapPulse();
+        await wait(200);
+      }
+      return live();
+    };
+
+    const passDrag = async () => {
+      const obj = objOf(task.correct);
+      if (!obj) return false;
+      placeInstant(centerOf(obj));
+      hand.classList.add("visible");
+      await wait(300);
+      if (!live()) return false;
+      await tapPulse(); // "chwyt" obiektu
+      if (!live()) return false;
+      await moveTo(centerOf(el("npc")));
+      if (!live()) return false;
+      await tapPulse(); // "wręczenie" NPC
+      return live();
+    };
+
+    const pass = type === "drag" ? passDrag : type === "sequence" ? passSequence : passTap;
+
+    hand.classList.remove("hidden");
+    // Duszek powtarza gest w kółko, aż dziecko samo je wykona — każda
+    // prawdziwa interakcja woła cancelHint(), które unieważnia token
+    // i przerywa pętlę na najbliższym sprawdzeniu live().
+    while (live()) {
+      const finished = await pass();
+      if (!finished || !live()) break;
+      hand.classList.remove("visible");
+      await wait(500);
+    }
+
+    hand.classList.remove("visible");
+    hand.classList.add("hidden");
+  }
+
   async onCorrect(btn, { skipPop = false } = {}) {
     const s = this.session;
     this.locked = true;
     const reward = this.task.reward;
+
+    // Poprawna odpowiedź na zadanie-powtórkę "spłaca" wcześniejsze pomyłki —
+    // słówko przestaje się doklejać do kolejnych stref, dopóki znów się nie pomyli.
+    const isReview = this.taskIndex >= (this.zone.tasks?.length ?? 0);
+    if (isReview && reward?.word) {
+      this.save.mistakes[reward.word] = 0;
+      persist(this.save);
+    }
 
     // Celebracja: taniec NPC, konfetti, fanfary, pochwała do końca.
     if (!skipPop) btn.classList.add("correct");
@@ -324,6 +509,14 @@ export class Game {
     this.locked = true;
     btn.classList.add("wrong");
     el("npc").className = "npc thinking";
+
+    // Niewidoczne śledzenie pomyłek: to słówko staje się kandydatem do
+    // powtórki na końcu jakiejś przyszłej strefy (buildReviewQueue).
+    const word = this.task.reward?.word;
+    if (word) {
+      this.save.mistakes[word] = (this.save.mistakes[word] ?? 0) + 1;
+      persist(this.save);
+    }
 
     const phrase = randomOf(this.zone.retryPhrases);
     el("instruction").textContent = phrase;
@@ -405,16 +598,22 @@ export class Game {
       return;
     }
 
-    // Scenka przemiany: before → after, z konfetti i pochwałą NPC.
+    // Scenka: pokazujemy "before" i czekamy na stuknięcie dziecka — nic nie
+    // dzieje się samo, dopiero jego dotyk uruchamia przemianę.
     el("instruction").textContent = sk.line;
     el("npc").className = "npc happy";
-    el("objects").innerHTML = `<div id="skill-scene" class="skill-scene">${sk.before}</div>`;
+    el("objects").innerHTML = `<button id="skill-scene" class="skill-scene" aria-label="ago">${sk.before}</button>`;
+    const scene = el("skill-scene");
+    // Nasłuch podłączony NATYCHMIAST (nie po mowie) — dziecko może stuknąć
+    // scenkę, zanim NPC skończy mówić, i to wciąż ma zadziałać.
+    const tapped = new Promise((resolve) => scene.addEventListener("pointerdown", resolve, { once: true }));
     await speak(sk.line, this.voice);
     if (this.stale(s)) return;
-    await wait(400);
+
+    await tapped;
     if (this.stale(s)) return;
 
-    const scene = el("skill-scene");
+    playTap();
     scene.classList.add("transform");
     scene.textContent = sk.after;
     playSuccess();
@@ -483,6 +682,7 @@ export class Game {
     this.sessionStars = 0;
     this.active = true;
     this.session++;
+    this.reviewQueue = this.buildReviewQueue();
     this.showTask();
   }
 

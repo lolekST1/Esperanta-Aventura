@@ -164,10 +164,32 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
   zagadki opisujące cechami: „Ĝi estas granda kaj alta...") w nowej strefie
   Monto 🏔️ (luno/suno/stelo/akvo/monto/nokto + zagadki używające już znanych
   słów granda i flugi)
+- ✅ akcje specjalne wymagają dotyku dziecka (nic nie dzieje się samo —
+  scena "before" czeka bezczynnie, dopóki dziecko jej nie stuknie),
+  numerki kolejności (1, 2, 3...) zamiast ticków w zadaniach sekwencji,
+  duszek ręki demonstrujący pierwsze zadanie każdego typu (tap/drag/
+  sequence) powtarza gest w kółko, dopóki dziecko go samo nie wykona,
+  a znacznik strefy z gotowym do odkrycia sekretem skrzy się gwiazdkami
 
-**Faza 4 — pełna gra**
-- Marbordo 🏖️ (pogoda, emocje), Kastelo 🏰 (dłuższe zdania, zadania wieloetapowe)
-- adaptacyjne powtórki: słówka z pomyłkami wracają częściej (niewidoczne spaced repetition)
+**Faza 4 (w trakcie) — pełna gra**
+- ✅ Marbordo 🏖️ — NPC 🦀 Kankro (żywiołowy, "Klik-klik!"), słownictwo
+  pogody i emocji (pluvo/vento/nubo/ĉielarko/feliĉa/trista + drag + sequence),
+  skill "nokto" (uczony w Monto) odsłania gwiaździste niebo nad morzem
+- ✅ Kastelo 🏰 — NPC 🐉 Drako (głęboki, dramatyczny, "Ha!"), dłuższe zdania
+  („Tuŝu la altan turon!" — nowe przymiotniki alta/malalta w stylu skali
+  granda/malgranda), zadanie wieloetapowe: sekwencja na 3 kroki zamiast 2
+  („Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!" — z przypomnieniem
+  „pordo" z Vilaĝo), skill "helpi" (uczony w Marbordo) otwiera sekretną komnatę.
+  Wyspa ma teraz 6 stref — mapa, kolejność odblokowania i finał (7 postaci:
+  awatar + 6 NPC) objęły ją automatycznie, bez zmian w silniku
+- ✅ adaptacyjne powtórki: każda pomyłka podbija licznik `save.mistakes[słowo]`;
+  po wyczerpaniu zwykłych zadań strefy silnik niewidocznie dokłada do 2 zadań
+  odpowiadających najczęściej mylonym słówkom — z DOWOLNEJ strefy, nie tylko
+  bieżącej (generyczny indeks słowo → zadanie budowany raz ze wszystkich
+  `ZONES`). Dziecko widzi zwykłe kolejne "Trovu la...!", bez żadnego oznaczenia
+  "to jest powtórka". Poprawna odpowiedź na powtórkę zeruje licznik (słówko
+  przestaje wracać, dopóki znów się nie pomyli) — silnik wciąż nie zna żadnych
+  KONKRETNYCH słówek, tylko generycznie operuje na polu `reward.word`
 - opcjonalnie: rozpoznawanie mowy (dziecko odpowiada głosem), tryb rodzica z podglądem postępów
 
 ### Jak dodać nowe treści

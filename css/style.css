@@ -20,6 +20,12 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
+  /* Treść wyśrodkowana przez margin:auto na .start-inner potrafi być
+     wyższa niż realnie widoczna wysokość telefonu (pasek adresu,
+     zakładki, nawigacja systemowa zjadają dużo miejsca) — bez tego
+     góra treści chowała się POD paskiem #topbar, a dolny przycisk był
+     ucięty poza ekranem, bez możliwości przewinięcia do niego. */
+  overflow-y: auto;
 }
 
 .hidden { display: none !important; }
@@ -90,9 +96,13 @@ h1, h2 {
 
 .island-win-npcs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
-  font-size: clamp(48px, 16vw, 80px);
+  /* Liczba NPC rośnie z każdą nową strefą (Faza 4 doda kolejne) — bez
+     zawijania rząd uciekał poza szerokość wąskich telefonów, bez
+     możliwości przewinięcia w poziomie (patrz overflow-y na .screen). */
+  font-size: clamp(40px, 14vw, 80px);
 }
 
 .island-win-npcs span { animation: bounce 1.6s ease-in-out infinite; }
@@ -110,6 +120,12 @@ h1, h2 {
 .island-win-stars {
   font-size: clamp(24px, 7vw, 36px);
   margin-bottom: 24px;
+}
+
+/* Te dwa ekrany pokazują #topbar (na start-screen/story-screen jest
+   ukryty) — odsuwamy treść, żeby jej góra nie chowała się pod paskiem. */
+#win-screen, #island-win-screen {
+  padding-top: 88px;
 }
 
 /* ---------- Pasek górny (wspólny dla mapy i gry) ---------- */
@@ -307,6 +323,30 @@ h1, h2 {
 
 .map-marker.new .map-marker-emoji { animation: invite-pulse 1.8s ease-in-out infinite; }
 
+/* Sekret (akcja-słowo) gotowy do odkrycia: gwiazdki skrzące się dookoła znacznika. */
+.marker-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spark {
+  position: absolute;
+  font-size: 15px;
+  opacity: 0;
+  animation: twinkle 1.6s ease-in-out infinite;
+}
+
+.spark-1 { top: -8px; left: -10px; animation-delay: 0s; }
+.spark-2 { top: -10px; right: -8px; animation-delay: 0.4s; }
+.spark-3 { bottom: -6px; left: -8px; animation-delay: 0.8s; }
+.spark-4 { bottom: -8px; right: -10px; animation-delay: 1.2s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(20deg); }
+}
+
 .map-avatar {
   position: absolute;
   transform: translate(-50%, -82%);
@@ -452,13 +492,21 @@ h1, h2 {
   box-shadow: 0 6px 0 #7ec85088;
 }
 
-.object-button.seq-done::after {
-  content: "✔";
+.seq-num {
   position: absolute;
   top: 6px;
-  right: 12px;
-  font-size: 0.3em;
-  color: #2c5e1a;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #2c5e1a;
+  color: #fff;
+  font-size: 17px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #00000022;
 }
 
 /* ---------- Słowa jako umiejętności (akcja strefy) ---------- */
@@ -487,11 +535,44 @@ h1, h2 {
 }
 
 .skill-scene {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   font-size: clamp(72px, 26vw, 150px);
   text-align: center;
+  transition: transform 0.15s;
 }
 
+.skill-scene:active { transform: scale(0.92); }
+
 .skill-scene.transform { animation: pop 0.6s ease; }
+
+/* ---------- Duszek ręki (demonstracja pierwszego zadania każdego typu) ---------- */
+
+.ghost-hand {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  font-size: 52px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 15;
+  transition: left 0.6s ease, top 0.6s ease, opacity 0.3s ease;
+  filter: drop-shadow(0 4px 6px #00000055);
+}
+
+.ghost-hand.hidden { display: none; }
+.ghost-hand.visible { opacity: 0.85; }
+
+.ghost-hand.tap { animation: hint-tap 0.4s ease; }
+
+@keyframes hint-tap {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  40% { transform: translate(-50%, -50%) scale(0.7); }
+}
 
 /* ---------- Nagroda ---------- */
 

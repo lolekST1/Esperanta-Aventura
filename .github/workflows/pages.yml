@@ -1,14 +1,15 @@
 name: Deploy to GitHub Pages
 
-# Publikacja przez gałąź gh-pages: środowisko github-pages (utworzone
-# automatycznie przy włączeniu Pages) dopuszcza deploye tylko z gh-pages,
-# więc workflow wypycha tam zawartość gry zamiast używać deploy-pages.
-#
-# Brak filtra branches (celowo): każdy push na KAŻDĄ gałąź ma trafiać na
-# Pages od razu, żeby najświeższą wersję dało się przetestować na telefonie
-# bez czekania na merge PR-a.
+# WYŁĄCZONE auto-deployowanie z tej gałęzi (2026-07-07): treść tego
+# brancha (razem z main) została scalona do
+# claude/esperanta-aventuro-game-eepx44, który jest teraz JEDYNYM
+# źródłem prawdy dla GitHub Pages (patrz jego
+# .github/workflows/pages.yml). Ta gałąź kiedyś deployowała przy KAŻDYM
+# pushu na KAŻDĄ gałąź repo, co powodowało, że różne, rozbieżne linie
+# rozwoju nadpisywały sobie nawzajem gotową stronę. Zostaje tylko
+# workflow_dispatch (ręczne odpalenie), gdyby ktoś naprawdę chciał
+# przetestować akurat tę gałąź na Pages.
 on:
-  push:
   workflow_dispatch:
 
 permissions:

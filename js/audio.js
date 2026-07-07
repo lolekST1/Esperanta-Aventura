@@ -1,25 +1,28 @@
-// Audio: mowa + proste efekty dźwiękowe (Web Audio API).
+// Audio: mowa (Web Speech API) + proste efekty dźwiękowe (Web Audio API).
 //
-// Mowa ma dwa tory:
-//   1. Nagrane lektorskie mp3 (OpenAI TTS, wygenerowane offline przez
-//      scripts/generate-tts.mjs, mapowane w AUDIO_MANIFEST) — pierwszy
-//      wybór, gdy fraza + głos NPC mają gotowe nagranie.
-//   2. Web Speech API — fallback, gdy nagrania nie ma albo się nie
-//      odtworzyło (np. brak sieci przy pierwszym, nieocache'owanym
-//      uruchomieniu). Esperancki jest rzadki jako głos systemowy, więc
-//      szukamy w kolejności języków o fonetyce najbliższej esperantu;
-//      angielski tylko w ostateczności, i wtedy tekst jest transliterowany
-//      na jego ortografię, żeby wymowa była poprawna — np. dla angielskiego
-//      "birdon" → "beerdohn" (inaczej lektor czyta "berdon").
+// Dobór głosu: esperancki jest rzadki, więc szukamy w kolejności języków
+// o fonetyce najbliższej esperantu. Angielski tylko w ostateczności.
+// Gdy jednak zostaje angielski (lub polski), tekst jest transliterowany
+// na ortografię tego języka, żeby wymowa była poprawna — np. dla
+// angielskiego "birdon" → "beerdohn" (inaczej lektor czyta "berdon").
 //
 // speak() zwraca Promise kończącą się wraz z mową — całe tempo gry
 // (pauzy, przejścia) jest sterowane faktyczną długością wypowiedzi.
+//
+// Nagrania lektorskie: jeśli dla danej (tekst, profil) pary istnieje wpis
+// w AUDIO_MANIFEST (wygenerowany przez tools/generate-tts.mjs z OpenAI TTS),
+// speak() odtwarza GOTOWY plik mp3 zamiast syntezy Web Speech — lepsza,
+// spójna wymowa esperanta bez transliteracji-obejść poniżej. Cokolwiek
+// jeszcze nie zostało nagrane (albo odtwarzanie się nie uda) spada na
+// dotychczasową syntezę, więc funkcja tego pliku działa identycznie nawet
+// przy pustym manifeście.
 
 import { AUDIO_MANIFEST } from "./data/audioManifest.js";
 
 let voice = null;
 let ctx = null;
-let audioEl = null;
+let currentAudio = null;
+let pendingRecordingFinish = null;
 
 const VOICE_KEY = "esperanta-aventuro-voice";
 const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
@@ -178,24 +181,28 @@ export function previewSpeech(text) {
   return { voice: v ? `${v.name} (${v.lang})` : `(domyślny, ${lang})`, text: prepareText(text, lang) };
 }
 
-// Profil narratora; NPC mają własne profile w zones.js. `id` łączy profil
-// z lektorskim nagraniem OpenAI TTS w AUDIO_MANIFEST (patrz niżej) —
-// profile bez id (ad-hoc obiekty {rate,pitch}) zawsze idą przez Web Speech.
-export const NARRATOR = { rate: 0.85, pitch: 1.0, id: "narrator" };
+// Profil narratora; NPC mają własne profile w zones.js.
+export const NARRATOR = { rate: 0.85, pitch: 1.0 };
 
-// Profil do pojedynczych słówek (nagroda po zadaniu, klik w Vortaro) —
-// wolno i wyraźnie, jak nauczyciel powtarzający nowe słowo.
-export const VOCAB = { rate: 0.7, pitch: 1.15, id: "vocab" };
+// Profil wypowiadania POJEDYNCZEGO słówka-nagrody (wolno i wyraźnie) —
+// używany w grze przy zdobyciu nagrody i przy odtwarzaniu z Vortaro.
+export const REWARD_VOICE = { rate: 0.7, pitch: 1.15 };
 
-// Cichy plik używany wyłącznie do odblokowania odtwarzania <audio> —
-// telefony blokują je tak samo jak speechSynthesis, dopóki nie padnie
-// odtworzenie SYNCHRONICZNIE w geście użytkownika.
+// Cichy plik używany wyłącznie do odblokowania odtwarzania <audio> w
+// initAudio() — osobny element, żeby nie ruszać currentAudio.
 const UNLOCK_SRC = "assets/audio/_unlock.mp3";
+
+// Musi dawać IDENTYCZNY wynik co profileKey() w tools/generate-tts.mjs —
+// to ten sam klucz z dwóch stron (generator zapisuje, runtime odczytuje).
+function manifestKey(text, profile) {
+  const rate = profile.rate ?? NARRATOR.rate;
+  const pitch = profile.pitch ?? NARRATOR.pitch;
+  return `${rate}|${pitch}|${text}`;
+}
 
 // Telefony blokują TTS, dopóki pierwsze speak() nie padnie SYNCHRONICZNIE
 // w geście użytkownika. initAudio() jest wołane w handlerze kliknięcia
-// „Ludi!", więc odblokowujemy tu silnik cichą wypowiedzią — zarówno Web
-// Speech, jak i (osobno) HTMLAudioElement używany do nagranych mp3.
+// „Ludi!", więc odblokowujemy tu silnik cichą wypowiedzią.
 export function initAudio() {
   if ("speechSynthesis" in window) {
     pickVoice();
@@ -211,71 +218,61 @@ export function initAudio() {
   if (AudioCtx && !ctx) ctx = new AudioCtx();
   if (ctx?.state === "suspended") ctx.resume();
 
-  if (!audioEl) audioEl = new Audio();
+  // Analogiczne odblokowanie dla odtwarzania nagrań mp3 (osobny mechanizm
+  // przeglądarki niż speechSynthesis) — bez tego pierwsze Audio().play()
+  // poza gestem użytkownika mogłoby zostać zablokowane na iOS Safari.
+  // Element BEZ src (jak poprzednio) w wielu przeglądarkach nie liczy się
+  // jako prawdziwe odtworzenie i nie odblokowuje niczego — używamy
+  // prawdziwego (cichego) pliku na osobnym, jednorazowym elemencie, żeby
+  // nie ruszać `currentAudio` używanego przez właściwe odtwarzanie.
   try {
-    audioEl.src = UNLOCK_SRC;
-    audioEl.volume = 0;
-    const p = audioEl.play();
-    if (p?.then) {
-      p.then(() => {
-        // Do chwili, gdy ta obietnica się rozstrzygnie, mogła już ruszyć
-        // prawdziwa kwestia NPC (współdzielimy audioEl) — pauzujemy TYLKO
-        // jeśli wciąż gra plik rozgrzewkowy, żeby nie ucinać właściwego
-        // odtwarzania.
-        if (audioEl.currentSrc.endsWith(UNLOCK_SRC)) audioEl.pause();
-        audioEl.volume = 1;
-      }).catch(() => { audioEl.volume = 1; });
-    }
+    const unlock = new Audio(UNLOCK_SRC);
+    unlock.volume = 0;
+    unlock.play().then(() => unlock.pause()).catch(() => {});
   } catch {}
 }
 
-// Nagrane lektorskie mp3 (OpenAI TTS, wygenerowane offline przez
-// scripts/generate-tts.mjs) — mapowane po (id profilu głosu, dokładny
-// tekst) w AUDIO_MANIFEST. Profile bez `id` (ad-hoc {rate,pitch}) zawsze
-// idą przez Web Speech.
-function findRecording(text, profile) {
-  const id = profile?.id;
-  return id ? AUDIO_MANIFEST[`${id}::${text}`] ?? null : null;
-}
-
-let pendingRecordingFinish = null;
-
-// Rozstrzyga się statusem: "ok" (odegrało do końca), "error" (nie dało
-// się odtworzyć — speak() spada wtedy na Web Speech) albo "stopped"
-// (przerwane przez stopSpeech(), NIE powinno wywoływać fallbacku).
-function playRecording(src) {
+// Gotowe nagranie (jeśli istnieje w manifeście) zamiast syntezy. Błąd
+// odtwarzania (plik brakuje, sieć padła) przezroczyście spada na syntezę —
+// dziecko nigdy nie zostaje bez żadnej mowy z powodu jednego złego pliku.
+function playRecording(src, text, profile) {
+  currentAudio?.pause();
+  pendingRecordingFinish?.(); // poprzednie odtwarzanie przerwane — rozwiąż jego obietnicę
   return new Promise((resolve) => {
-    if (!audioEl) audioEl = new Audio();
-    let done = false;
-    const finish = (status) => {
-      if (done) return;
-      done = true;
-      audioEl.onended = null;
-      audioEl.onerror = null;
+    const audio = new Audio(src);
+    currentAudio = audio;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
       pendingRecordingFinish = null;
-      resolve(status);
+      resolve();
     };
+    const fallback = () => {
+      if (settled) return;
+      settled = true;
+      pendingRecordingFinish = null;
+      speakSynthesized(text, profile).then(resolve);
+    };
+    // Wywoływane przez stopSpeech() (np. wyjście do mapy w trakcie mowy) —
+    // audio.pause() sam z siebie NIE odpala "ended" ani "error", więc bez
+    // tego ta obietnica wisiałaby (i cała sekwencja await speak() w game.js)
+    // zawieszona do końca sesji. To NIE jest błąd, więc rozwiązujemy finish(),
+    // nie fallback().
     pendingRecordingFinish = finish;
-    audioEl.onended = () => finish("ok");
-    audioEl.onerror = () => finish("error");
-    audioEl.volume = 1;
-    audioEl.currentTime = 0;
-    audioEl.src = src;
-    const p = audioEl.play();
-    if (p?.catch) p.catch(() => finish("error"));
+    audio.addEventListener("ended", finish);
+    audio.addEventListener("error", fallback);
+    audio.play().catch(fallback);
   });
 }
 
-export async function speak(text, profile = NARRATOR) {
-  const recording = findRecording(text, profile);
-  if (recording) {
-    const status = await playRecording(recording);
-    if (status !== "error") return;
-  }
-  return speakSynth(text, profile);
+export function speak(text, profile = NARRATOR) {
+  const recorded = AUDIO_MANIFEST[manifestKey(text, profile)];
+  if (recorded) return playRecording(recorded, text, profile);
+  return speakSynthesized(text, profile);
 }
 
-function speakSynth(text, profile) {
+function speakSynthesized(text, profile = NARRATOR) {
   return new Promise((resolve) => {
     let done = false;
     const finish = () => {
@@ -318,8 +315,8 @@ function speakSynth(text, profile) {
 
 export function stopSpeech() {
   window.speechSynthesis?.cancel();
-  audioEl?.pause();
-  pendingRecordingFinish?.("stopped");
+  currentAudio?.pause();
+  pendingRecordingFinish?.();
 }
 
 // Diagnostyka na żywo dla ekranu ⚙️ — gdy nawet ręczny wybór głosu milczy,
@@ -328,7 +325,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v17-openai-tts";
+export const GAME_VERSION = "v25-tts-fix";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

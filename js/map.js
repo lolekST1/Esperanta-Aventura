@@ -51,17 +51,37 @@ export function renderMap(game, onSelect) {
 
     // Nieodwiedzona jeszcze, ale odblokowana strefa delikatnie pulsuje —
     // zaprasza do stuknięcia. Twarz NPC na znaczniku ożywia mapę nawet
-    // przed wejściem do strefy.
-    const isNew = unlocked && !progress?.done;
+    // przed wejściem do strefy. Iskierka ✨ = w strefie czeka akcja-słowo,
+    // którą dziecko właśnie odblokowało (powód, żeby tam wrócić).
+    const skillReady =
+      !!zone.skill &&
+      unlocked &&
+      !save.skillsDone?.[zoneId] &&
+      save.words.some((w) => w.word === zone.skill.word);
+    const isNew = unlocked && (!progress?.done || skillReady);
     const marker = document.createElement("button");
     marker.className = "map-marker" + (unlocked ? "" : " locked") + (isNew ? " new" : "");
     marker.style.left = `${zone.map.x}%`;
     marker.style.top = `${zone.map.y}%`;
     marker.dataset.id = zoneId;
 
-    const status = !unlocked ? "🔒" : progress?.done ? `⭐${progress.stars}` : "🆕";
+    const done = progress?.done ? `⭐${progress.stars}` : "🆕";
+    const status = !unlocked ? "🔒" : done + (skillReady ? "✨" : "");
+    // Sekret gotowy do odkrycia: gwiazdki skrzą się wokół znacznika,
+    // każda z innym opóźnieniem, żeby migotanie wyglądało żywo.
+    const sparkles = skillReady
+      ? `<span class="marker-sparkles" aria-hidden="true">
+           <span class="spark spark-1">✨</span>
+           <span class="spark spark-2">⭐</span>
+           <span class="spark spark-3">✨</span>
+           <span class="spark spark-4">⭐</span>
+         </span>`
+      : "";
     marker.innerHTML = `
-      <span class="map-marker-emoji">${zone.mapEmoji}<span class="map-marker-npc">${zone.npc.emoji}</span></span>
+      <span class="map-marker-emoji">
+        ${zone.mapEmoji}<span class="map-marker-npc">${zone.npc.emoji}</span>
+        ${sparkles}
+      </span>
       <span class="map-marker-label">${zone.name}</span>
       <span class="map-marker-status">${status}</span>
     `;

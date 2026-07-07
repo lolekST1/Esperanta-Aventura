@@ -9,7 +9,7 @@ export const STORY = [
   {
     scene: "🦊👋",
     text: "Saluton! Mi estas Vulpo! Bonvenon!",
-    voice: { rate: 1.05, pitch: 1.4, id: "vulpo" },
+    voice: { rate: 1.05, pitch: 1.4 },
   },
   { scene: "⭐📖", text: "Kolektu stelojn kaj lernu vortojn!" },
 ];

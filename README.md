@@ -97,6 +97,14 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ strefa Arbaro 🌳 z papugą Papago (zwierzęta, czasowniki ruchu — obiekty *animowane*: „Tuŝu la saltantan beston!")
 - ✅ zapis postępu per strefa (gwiazdki, ukończenie)
 - ⬜ nagrania lektorskie zamiast TTS (pliki mp3 per fraza, mapowane w `zones.js`)
+  — **notatka z testów (2026-07-07):** darmowe głosy przeglądarki (Web Speech
+    API) są niespójne między urządzeniami i wymagają transliteracji-obejść
+    (patrz `js/audio.js`); test z OpenAI TTS wykazał, że głosy **Cedar, Marin
+    i Nova** poprawnie wymawiają esperanckie testowe słowa (sciuro, birdo,
+    hundino) bez żadnych sztuczek. Jeśli nagrania lektorskie nie wejdą od
+    razu, wygenerowanie fraz przez OpenAI TTS (jednorazowo, offline, jako
+    pliki mp3) tymi głosami może być szybszą drogą do dobrej wymowy niż
+    dalsze łatanie Web Speech API
 
 **Faza 2.5 (✅)** — fabuła, personalizacja i żywe audio
 - ✅ bajka wprowadzająca: lot balonem na wyspę Esperantio (powtarzalna z mapy 📜)

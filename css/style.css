@@ -428,7 +428,27 @@ h1, h2 {
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
-  max-height: 42vh;
+  max-height: 24vh;
+}
+
+.tricky-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 20vh;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: #4dabf7;
+  font-family: inherit;
+  font-size: 15px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+  align-self: center;
 }
 
 .voice-item {
@@ -449,6 +469,21 @@ h1, h2 {
   color: #667;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
+
+.tricky-item {
+  border: none;
+  border-radius: 14px;
+  background: #fff3e0;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  color: #234;
+  cursor: pointer;
+  text-align: left;
+  min-height: 40px;
+}
+
+.tricky-item:active { transform: scale(0.98); }
 
 .voice-item.active {
   border-color: #4dabf7;

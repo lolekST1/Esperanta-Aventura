@@ -94,8 +94,8 @@ function renderTrickyWords() {
   for (const phrase of TRICKY_WORDS) {
     const { text } = previewSpeech(phrase);
     const btn = document.createElement("button");
-    btn.className = "voice-item";
-    btn.innerHTML = `${phrase}<br><span class="voice-item-sub">→ „${text}"</span>`;
+    btn.className = "tricky-item";
+    btn.innerHTML = `${phrase} <span class="voice-item-sub">→ „${text}"</span>`;
     btn.addEventListener("click", () => {
       const { current } = getVoiceChoices();
       testVoice(current, phrase, logVoiceEvent);
@@ -140,9 +140,14 @@ function renderVoiceList() {
 el("btn-voice").addEventListener("click", () => {
   el("voice-log").innerHTML = "";
   el("voice-log").classList.add("hidden");
+  el("voice-diagnostics").classList.add("hidden");
   renderVoiceList();
   renderTrickyWords();
   el("voice-screen").classList.remove("hidden");
+});
+
+el("btn-toggle-diagnostics").addEventListener("click", () => {
+  el("voice-diagnostics").classList.toggle("hidden");
 });
 
 el("btn-close-voice").addEventListener("click", () => {

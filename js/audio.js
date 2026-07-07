@@ -242,7 +242,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v12-ustawienia";
+export const GAME_VERSION = "v13-scroll-fix";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

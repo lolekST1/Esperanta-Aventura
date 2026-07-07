@@ -444,6 +444,12 @@ h1, h2 {
   min-height: 56px;
 }
 
+.voice-item-sub {
+  font-size: 14px;
+  color: #667;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
 .voice-item.active {
   border-color: #4dabf7;
   background: #dcecff;

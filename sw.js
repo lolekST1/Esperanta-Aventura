@@ -1,5 +1,11 @@
 // Service worker — gra działa w pełni offline po pierwszym otwarciu.
-const CACHE = "esperanta-aventuro-v10";
+//
+// Kod (HTML/JS/CSS) idzie strategią "najpierw sieć": gdy jest internet,
+// zawsze bierzemy najświeższą wersję i dokładamy do cache; offline —
+// spadamy na to, co jest w cache. Bez tego stara wersja gry potrafiła
+// zostać w PWA nawet po wdrożeniu poprawki, dopóki ktoś nie zamknął
+// i nie otworzył aplikacji kilka razy (mylące przy debugowaniu na żywo).
+const CACHE = "esperanta-aventuro-v11";
 const ASSETS = [
   ".",
   "index.html",
@@ -14,6 +20,8 @@ const ASSETS = [
   "js/data/story.js",
   "assets/icon.svg",
 ];
+
+const CODE_PATTERN = /\.(js|css|html)$/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
@@ -30,7 +38,18 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
-  );
+  const isCode = e.request.mode === "navigate" || CODE_PATTERN.test(new URL(e.request.url).pathname);
+
+  if (isCode) {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(caches.match(e.request).then((cached) => cached || fetch(e.request)));
+  }
 });

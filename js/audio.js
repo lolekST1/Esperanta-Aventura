@@ -239,9 +239,15 @@ export function stopSpeech() {
 // Diagnostyka na żywo dla ekranu ⚙️ — gdy nawet ręczny wybór głosu milczy,
 // to nie jest już kwestia doboru głosu. Te fakty (bez devtools na
 // telefonie) pokazują, co dokładnie się dzieje.
+// Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
+// żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
+// wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
+export const GAME_VERSION = "v11-sci-uro";
+
 export function diagnostics() {
   const ua = navigator.userAgent || "";
   return {
+    version: GAME_VERSION,
     hasSynth: "speechSynthesis" in window,
     voiceCount: allVoices().length,
     lang: navigator.language,

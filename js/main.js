@@ -1,4 +1,4 @@
-import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride, diagnostics, testVoice } from "./audio.js";
+import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride, diagnostics, testVoice, previewSpeech } from "./audio.js";
 import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
@@ -76,6 +76,7 @@ function renderDiagnostics() {
   const d = diagnostics();
   const box = el("voice-diagnostics");
   box.innerHTML = `
+    Wersja gry: ${d.version}<br>
     speechSynthesis: ${d.hasSynth ? "✅ dostępne" : "❌ NIEDOSTĘPNE"}<br>
     Liczba głosów: ${d.voiceCount}<br>
     Język przeglądarki: ${d.lang}<br>
@@ -83,6 +84,24 @@ function renderDiagnostics() {
     Dźwięk (AudioContext): ${d.audioCtxState ?? "brak"}
     ${d.likelyInAppBrowser ? `<br><strong>⚠️ To może być przeglądarka wbudowana w aplikację (np. Messenger/Instagram) — takie przeglądarki często blokują mowę. Spróbuj otworzyć link w Chrome lub Safari.</strong>` : ""}
   `;
+}
+
+const TRICKY_WORDS = ["Trovu la birdon!", "Trovu la sciuron!", "Tuŝu la dormantan beston!", "Tuŝu la saltantan beston!"];
+
+function renderTrickyWords() {
+  const box = el("tricky-words");
+  box.innerHTML = "";
+  for (const phrase of TRICKY_WORDS) {
+    const { text } = previewSpeech(phrase);
+    const btn = document.createElement("button");
+    btn.className = "voice-item";
+    btn.innerHTML = `${phrase}<br><span class="voice-item-sub">→ „${text}"</span>`;
+    btn.addEventListener("click", () => {
+      const { current } = getVoiceChoices();
+      testVoice(current, phrase, logVoiceEvent);
+    });
+    box.appendChild(btn);
+  }
 }
 
 function renderVoiceList() {
@@ -122,6 +141,7 @@ el("btn-voice").addEventListener("click", () => {
   el("voice-log").innerHTML = "";
   el("voice-log").classList.add("hidden");
   renderVoiceList();
+  renderTrickyWords();
   el("voice-screen").classList.remove("hidden");
 });
 

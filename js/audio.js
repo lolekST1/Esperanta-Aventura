@@ -242,7 +242,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v16-insula-festo";
+export const GAME_VERSION = "v17-vortoj-kiel-povoj";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

@@ -429,6 +429,70 @@ h1, h2 {
   font-size: 0.35em;
 }
 
+/* ---------- Zadania "Donu..." (przeciąganie na NPC) ---------- */
+
+.object-button.dragging {
+  transition: none; /* transform podąża za palcem bez opóźnienia */
+  z-index: 8;
+  box-shadow: 0 14px 28px #00000033;
+}
+
+.object-button.snap-back { transition: transform 0.35s ease; }
+
+/* wręczony obiekt znika w łapkach NPC */
+.object-button.given { transition: transform 0.45s ease-in, opacity 0.45s ease-in; }
+
+.npc.drop-target { filter: drop-shadow(0 0 12px #ffd76a); }
+.npc.drop-hot { transform: scale(1.18); }
+
+/* ---------- Zadania "Unue... poste..." (sekwencje) ---------- */
+
+.object-button.seq-done {
+  background: #c9f7c9;
+  box-shadow: 0 6px 0 #7ec85088;
+}
+
+.object-button.seq-done::after {
+  content: "✔";
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  font-size: 0.3em;
+  color: #2c5e1a;
+}
+
+/* ---------- Słowa jako umiejętności (akcja strefy) ---------- */
+
+.skill-spot {
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 50%;
+  background: #fff3c4;
+  font-size: 34px;
+  box-shadow: 0 5px 0 #00000022;
+  cursor: pointer;
+  z-index: 6;
+  animation: invite-pulse 1.8s ease-in-out infinite;
+}
+
+.skill-spot.locked {
+  animation: none;
+  background: #ffffff90;
+  filter: grayscale(0.6);
+  opacity: 0.75;
+}
+
+.skill-scene {
+  font-size: clamp(72px, 26vw, 150px);
+  text-align: center;
+}
+
+.skill-scene.transform { animation: pop 0.6s ease; }
+
 /* ---------- Nagroda ---------- */
 
 .reward-toast {

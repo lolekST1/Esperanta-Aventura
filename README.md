@@ -69,12 +69,46 @@ Dodanie strefy, słówka czy zadania **nie wymaga zmian w silniku**.
 
 ```js
 {
+  type: "tap",                              // "tap" (domyślnie) | "drag" | "sequence"
   instruction: "Trovu la pomon!",          // co mówi NPC
   objects: [{ id: "pomo", emoji: "🍎" }],  // co widać na scenie
-  correct: "pomo",                          // poprawny obiekt
+  correct: "pomo",                          // poprawny obiekt (tap/drag)
+  sequence: ["pomo", "banano"],             // kolejność stuknięć (tylko "sequence")
   reward: { word: "pomo", emoji: "🍎" }     // słówko do albumu Vortaro
 }
 ```
+
+Typy interakcji:
+- **tap** — stuknij poprawny obiekt (klasyka)
+- **drag** — przeciągnij poprawny obiekt NA NPC („*Donu la panon al Urso!*");
+  upuszczenie obok = ciche wślizgnięcie z powrotem (zero kary), sam tap = powtórzenie instrukcji
+- **sequence** — stuknij obiekty w zadanej kolejności („*Unue tuŝu la sunon, poste la lunon!*");
+  dobry krok zostaje podświetlony ✔, pomyłka łagodnie zeruje postęp
+
+### Słowa jako umiejętności (`zone.skill`)
+
+Zebrane słówko odblokowuje **akcję w świecie**. Na scenie strefy wisi okrągły
+przycisk: pokazuje ❓ dopóki dziecko nie zna wymaganego słowa, a po jego
+nauczeniu — emoji akcji (pulsuje). Akcja to mała scenka przemiany
+(np. 🌱→🌳) z nagrodą-słówkiem za pierwsze użycie; kolejne stuknięcia
+powtarzają samą scenkę (dzieci kochają powtórki):
+
+```js
+skill: {
+  word: "akvo",              // wymagane słówko z Vortaro
+  emoji: "🪣",                // przycisk akcji po odblokowaniu
+  before: "🌱", after: "🌳",  // scenka przemiany
+  line: "Vi konas la vorton akvo! Akvu la arbeton!",
+  praise: "Rigardu! La arbeto kreskis!",
+  lockedLine: "Ŝŝŝ... tio estas sekreto. Lernu pli da vortoj!",
+  reward: { word: "arbo", emoji: "🌳" },   // słówko za pierwsze użycie
+}
+```
+
+Słowa-klucze są **międzystrefowe** (ruĝa z Fruktejo otwiera drzwi w Vilaĝo,
+akvo z Monto podlewa drzewko w Fruktejo...) — dają powód, by wracać do
+ukończonych stref. Na mapie strefa z nowo odblokowaną, nieużytą akcją
+dostaje iskierkę ✨ i pulsuje (`save.skillsDone` per strefa).
 
 ## 🎮 Pętla gry (MVP — strefa Fruktejo)
 
@@ -118,10 +152,18 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ ożywiona mapa: znacznik nieodwiedzonej, odblokowanej strefy delikatnie pulsuje (zaproszenie do stuknięcia), każdy znacznik pokazuje też twarz NPC danej strefy
 - ✅ wielki finał wyspy: po ukończeniu WSZYSTKICH obecnych stref — jednorazowy ekran świętowania z całą obsadą NPC i awatarem, zapowiedź kolejnych przygód (`save.islandCelebrated`)
 
-**Faza 3 — głębia mechanik: słowa jako umiejętności**
-- zebrane słówka odblokowują akcje w świecie (akvo → podlewanie, ruĝa → czerwone drzwi)
-- nowe typy zadań w silniku: `tap` (jest), `drag` (Donu la pomon al Urso), `sequence` (Unue... poste...)
-- kolejne NPC z osobowościami: 🐻 Urso (wolny, jedzenie), 🦜 Papago (powtarzanie), 🦉 Strigo (zagadki)
+**Faza 3 (✅) — głębia mechanik: słowa jako umiejętności**
+- ✅ zebrane słówka odblokowują akcje w świecie (`zone.skill`): ruĝa → czerwone
+  drzwi Urso (🎁), pano → karmienie ptaków w Arbaro (🎶), akvo → podlewanie
+  drzewka Vulpo (🌳), flugi → nocny lot ze Strigo (🌌); klucze są międzystrefowe,
+  a mapa iskierką ✨ pokazuje, gdzie czeka świeżo odblokowana akcja
+- ✅ nowe typy zadań w silniku: `tap` (był), `drag` („Donu la panon al Urso!" —
+  przeciąganie obiektu na NPC, pointer capture, zero kary za upuszczenie obok),
+  `sequence` („Unue tuŝu la sunon, poste la lunon!" — stukanie w kolejności)
+- ✅ nowy NPC z osobowością: 🦉 Strigo (mądry, spokojny, mówi „hu-hu", zadaje
+  zagadki opisujące cechami: „Ĝi estas granda kaj alta...") w nowej strefie
+  Monto 🏔️ (luno/suno/stelo/akvo/monto/nokto + zagadki używające już znanych
+  słów granda i flugi)
 
 **Faza 4 — pełna gra**
 - Marbordo 🏖️ (pogoda, emocje), Kastelo 🏰 (dłuższe zdania, zadania wieloetapowe)
@@ -131,7 +173,10 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 ### Jak dodać nowe treści
 
 - **Nowe zadanie/słówko**: dopisz obiekt do `tasks` w `js/data/zones.js`
+  (z `type: "drag"` lub `"sequence"`, jeśli ma być inne niż stuknięcie)
 - **Nowa strefa**: dodaj wpis do `ZONES` (NPC, frazy, zadania, `map: {x, y}` — pozycja na wyspie w %) i dopisz jej id do `ZONE_ORDER` — mapa i ścieżka narysują się same
+- **Nowa akcja-słowo**: dodaj `skill` do strefy (patrz wyżej) — przycisk,
+  blokada i iskierka na mapie zadziałają same
 - **Nowy typ interakcji**: dodaj pole `type` w zadaniu i gałąź w `game.js`
 
 ## 🎨 Zasady projektowe

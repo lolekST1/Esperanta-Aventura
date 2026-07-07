@@ -117,7 +117,14 @@ function renderDiagnostics() {
   `;
 }
 
-const TRICKY_WORDS = ["Trovu la birdon!", "Trovu la sciuron!", "Tuŝu la dormantan beston!", "Tuŝu la saltantan beston!"];
+const TRICKY_WORDS = [
+  "Trovu la birdon!",
+  "Trovu la sciuron!",
+  "Tuŝu la dormantan beston!",
+  "Tuŝu la saltantan beston!",
+  "Donu la akvon al Strigo!",
+  "Unue tuŝu la sunon, poste la lunon!",
+];
 
 function renderTrickyWords() {
   const box = el("tricky-words");

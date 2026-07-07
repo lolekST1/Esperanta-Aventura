@@ -27,6 +27,7 @@ function loadSave() {
   save.mapPosition ??= null;
   save.storiesSeen ??= {};
   save.islandCelebrated ??= false;
+  save.skillsDone ??= {};
   return save;
 }
 
@@ -54,8 +55,13 @@ export class Game {
     this.active = false;
     this.session = 0;
     this.onWin = null; // ustawiane przez main.js (nawigacja)
+    el("btn-skill").addEventListener("pointerdown", () => this.onSkillTap());
     this.updateHud();
     this.renderVortaro();
+  }
+
+  hasWord(word) {
+    return this.save.words.some((w) => w.word === word);
   }
 
   get voice() {
@@ -92,6 +98,7 @@ export class Game {
     this.active = true;
     this.session++;
     el("npc").textContent = zone.npc.emoji;
+    this.renderSkillSpot();
   }
 
   // Wywoływane przy wyjściu do mapy — unieważnia trwające sekwencje.
@@ -139,8 +146,11 @@ export class Game {
     const task = this.task;
     if (!task) return this.finishZone();
 
+    this.seqIndex = 0;
+    const isDrag = task.type === "drag";
     el("instruction").textContent = task.instruction;
-    el("npc").className = "npc";
+    // Przy zadaniu "Donu..." NPC świeci się jako cel upuszczenia.
+    el("npc").className = "npc" + (isDrag ? " drop-target" : "");
 
     const box = el("objects");
     box.innerHTML = "";
@@ -162,7 +172,8 @@ export class Game {
         btn.appendChild(badge);
       }
 
-      btn.addEventListener("pointerdown", () => this.onTap(btn, obj));
+      if (isDrag) this.makeDraggable(btn, obj);
+      else btn.addEventListener("pointerdown", () => this.onTap(btn, obj));
       box.appendChild(btn);
     }
 
@@ -172,7 +183,9 @@ export class Game {
 
   onTap(btn, obj) {
     if (this.locked || !this.active) return;
+    if (btn.classList.contains("seq-done")) return; // już zaliczony krok sekwencji
     playTap();
+    if (this.task.type === "sequence") return this.onSeqTap(btn, obj);
     if (obj.id === this.task.correct) {
       this.onCorrect(btn);
     } else {
@@ -180,13 +193,110 @@ export class Game {
     }
   }
 
-  async onCorrect(btn) {
+  // Sekwencja "Unue... poste...": obiekty stukane w zadanej kolejności.
+  // Dobry krok zostaje podświetlony; pomyłka łagodnie zeruje postęp
+  // (instrukcja i tak powtarza całą kolejność).
+  onSeqTap(btn, obj) {
+    const seq = this.task.sequence;
+    if (obj.id === seq[this.seqIndex]) {
+      btn.classList.add("seq-done");
+      this.seqIndex++;
+      if (this.seqIndex >= seq.length) this.onCorrect(btn);
+    } else {
+      this.seqIndex = 0;
+      for (const b of el("objects").children) b.classList.remove("seq-done");
+      this.onWrong(btn);
+    }
+  }
+
+  // Zadanie "Donu la X al Y": obiekt ciągnie się palcem (pointer capture)
+  // i upuszcza na NPC. Upuszczenie obok = ciche wślizgnięcie z powrotem,
+  // zero kary; samo stuknięcie (bez ruchu) = powtórzenie instrukcji.
+  makeDraggable(btn, obj) {
+    btn.style.touchAction = "none";
+    btn.addEventListener("pointerdown", (e) => {
+      if (this.locked || !this.active) return;
+      btn.setPointerCapture(e.pointerId);
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let moved = false;
+      const npc = el("npc");
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        if (!moved && Math.hypot(dx, dy) > 6) {
+          moved = true;
+          btn.classList.add("dragging");
+        }
+        if (moved) {
+          btn.style.transform = `translate(${dx}px, ${dy}px)`;
+          npc.classList.toggle("drop-hot", this.overNpc(btn));
+        }
+      };
+      const onUp = () => {
+        btn.removeEventListener("pointermove", onMove);
+        btn.removeEventListener("pointerup", onUp);
+        btn.removeEventListener("pointercancel", onUp);
+        npc.classList.remove("drop-hot");
+        if (!moved) {
+          playTap();
+          speak(this.task.instruction, this.voice);
+          return;
+        }
+        if (this.overNpc(btn)) this.onDrop(btn, obj);
+        else this.snapBack(btn);
+      };
+
+      btn.addEventListener("pointermove", onMove);
+      btn.addEventListener("pointerup", onUp);
+      btn.addEventListener("pointercancel", onUp);
+    });
+  }
+
+  overNpc(btn) {
+    const a = btn.getBoundingClientRect();
+    const b = el("npc").getBoundingClientRect();
+    const pad = 12; // margines dobroci dla małych palców
+    return (
+      a.left < b.right + pad &&
+      a.right > b.left - pad &&
+      a.top < b.bottom + pad &&
+      a.bottom > b.top - pad
+    );
+  }
+
+  snapBack(btn) {
+    btn.classList.remove("dragging");
+    btn.classList.add("snap-back");
+    btn.style.transform = "";
+    setTimeout(() => btn.classList.remove("snap-back"), 400);
+  }
+
+  onDrop(btn, obj) {
+    if (this.locked || !this.active) return;
+    if (obj.id === this.task.correct) {
+      playTap();
+      // Wręczony obiekt znika w łapkach NPC (maleje i gaśnie na miejscu).
+      const at = btn.style.transform;
+      btn.classList.remove("dragging");
+      btn.classList.add("given");
+      btn.style.transform = `${at} scale(0.15)`;
+      btn.style.opacity = "0";
+      this.onCorrect(btn, { skipPop: true });
+    } else {
+      this.snapBack(btn);
+      this.onWrong(btn);
+    }
+  }
+
+  async onCorrect(btn, { skipPop = false } = {}) {
     const s = this.session;
     this.locked = true;
     const reward = this.task.reward;
 
     // Celebracja: taniec NPC, konfetti, fanfary, pochwała do końca.
-    btn.classList.add("correct");
+    if (!skipPop) btn.classList.add("correct");
     el("npc").className = "npc dance";
     playSuccess();
     this.dropConfetti();
@@ -249,10 +359,89 @@ export class Game {
       this.save.words.push(reward);
       persist(this.save);
       this.renderVortaro();
+      this.renderSkillSpot(); // nowe słówko mogło właśnie odblokować akcję
     }
     el("reward-emoji").textContent = reward.emoji;
     el("reward-word").textContent = reward.word;
     el("reward-toast").classList.remove("hidden");
+  }
+
+  // ---------- Słowa jako umiejętności (zone.skill) ----------
+  // Na scenie wisi przycisk akcji: ❓ dopóki dziecko nie zna wymaganego
+  // słówka, potem emoji akcji (pulsuje). Pierwsze użycie daje gwiazdkę
+  // i słówko-nagrodę; kolejne stuknięcia powtarzają samą scenkę.
+
+  renderSkillSpot() {
+    const spot = el("btn-skill");
+    const sk = this.zone?.skill;
+    if (!sk) {
+      spot.classList.add("hidden");
+      return;
+    }
+    const unlocked = this.hasWord(sk.word);
+    spot.classList.remove("hidden");
+    spot.classList.toggle("locked", !unlocked);
+    spot.textContent = unlocked ? sk.emoji : "❓";
+  }
+
+  async onSkillTap() {
+    if (this.locked || !this.active || !this.zone?.skill || !this.task) return;
+    const s = this.session;
+    const sk = this.zone.skill;
+    this.locked = true;
+    playTap();
+
+    // Słówko jeszcze nieznane: tajemnicza, łagodna zachęta i powrót do zadania.
+    if (!this.hasWord(sk.word)) {
+      el("npc").className = "npc thinking";
+      el("instruction").textContent = sk.lockedLine;
+      await speak(sk.lockedLine, this.voice);
+      if (this.stale(s)) return;
+      await wait(400);
+      if (this.stale(s)) return;
+      el("npc").className = "npc";
+      el("instruction").textContent = this.task.instruction;
+      this.locked = false;
+      return;
+    }
+
+    // Scenka przemiany: before → after, z konfetti i pochwałą NPC.
+    el("instruction").textContent = sk.line;
+    el("npc").className = "npc happy";
+    el("objects").innerHTML = `<div id="skill-scene" class="skill-scene">${sk.before}</div>`;
+    await speak(sk.line, this.voice);
+    if (this.stale(s)) return;
+    await wait(400);
+    if (this.stale(s)) return;
+
+    const scene = el("skill-scene");
+    scene.classList.add("transform");
+    scene.textContent = sk.after;
+    playSuccess();
+    this.dropConfetti();
+    el("npc").className = "npc dance";
+    el("instruction").textContent = sk.praise;
+
+    const first = !this.save.skillsDone[this.zone.id];
+    if (first) {
+      this.save.skillsDone[this.zone.id] = true;
+      this.addStar();
+    }
+    await speak(sk.praise, this.voice);
+    if (this.stale(s)) return;
+
+    if (first && sk.reward) {
+      this.showReward(sk.reward);
+      await speak(sk.reward.word, { rate: 0.7, pitch: 1.15 });
+      if (this.stale(s)) return;
+      await wait(1200);
+      if (this.stale(s)) return;
+      this.hideReward();
+    } else {
+      await wait(800);
+      if (this.stale(s)) return;
+    }
+    this.showTask(); // z powrotem do bieżącego zadania
   }
 
   hideReward() {

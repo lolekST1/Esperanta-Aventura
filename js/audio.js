@@ -73,8 +73,13 @@ export function setVoiceOverride(id) {
   pickVoice();
 }
 
-function effectiveLang() {
-  return voice?.lang?.toLowerCase().slice(0, 2) ?? "";
+// Głos i język, którymi faktycznie odezwie się gra. Gdy nie ma wybranego
+// głosu, używamy domyślnego głosu systemu w języku systemu — NIGDY nie
+// wymuszamy lang="eo" bez głosu eo, bo Android wtedy potrafi milczeć.
+function resolveSpeech() {
+  if (!voice) pickVoice();
+  if (voice) return { voice, lang: voice.lang || navigator.language || "en" };
+  return { voice: null, lang: navigator.language || "en" };
 }
 
 // Polski głos czyta esperanto niemal poprawnie, jeśli zapisać tekst
@@ -121,26 +126,35 @@ function toEnglishPhonetic(text) {
   return out;
 }
 
-function prepareText(text) {
-  const lang = effectiveLang();
-  if (lang === "pl") return toPolish(text);
-  if (lang === "en") return toEnglishPhonetic(text);
+function prepareText(text, lang) {
+  const l = (lang || "").toLowerCase();
+  if (l.startsWith("pl")) return toPolish(text);
+  if (l.startsWith("en")) return toEnglishPhonetic(text);
   return text;
 }
 
 // Do diagnostyki i testów: jak dokładnie zostanie przeczytany dany tekst.
 export function previewSpeech(text) {
-  if (!voice) pickVoice();
-  return { voice: voice ? `${voice.name} (${voice.lang})` : null, text: prepareText(text) };
+  const { voice: v, lang } = resolveSpeech();
+  return { voice: v ? `${v.name} (${v.lang})` : `(domyślny, ${lang})`, text: prepareText(text, lang) };
 }
 
 // Profil narratora; NPC mają własne profile w zones.js.
 export const NARRATOR = { rate: 0.85, pitch: 1.0 };
 
+// Telefony blokują TTS, dopóki pierwsze speak() nie padnie SYNCHRONICZNIE
+// w geście użytkownika. initAudio() jest wołane w handlerze kliknięcia
+// „Ludi!", więc odblokowujemy tu silnik cichą wypowiedzią.
 export function initAudio() {
   if ("speechSynthesis" in window) {
     pickVoice();
     window.speechSynthesis.onvoiceschanged = pickVoice;
+    try {
+      const warm = new SpeechSynthesisUtterance(" ");
+      warm.volume = 0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(warm);
+    } catch {}
   }
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (AudioCtx && !ctx) ctx = new AudioCtx();
@@ -163,16 +177,13 @@ export function speak(text, profile = NARRATOR) {
     }
 
     const synth = window.speechSynthesis;
-    // Lista głosów potrafi załadować się po starcie — dobieraj do skutku.
-    if (!voice) pickVoice();
-
     let started = false;
     let retried = false;
 
     const makeUtterance = (t, v, lang) => {
       const u = new SpeechSynthesisUtterance(t);
       if (v) u.voice = v;
-      u.lang = lang;
+      if (lang) u.lang = lang;
       u.rate = profile.rate ?? NARRATOR.rate;
       u.pitch = profile.pitch ?? NARRATOR.pitch;
       u.onstart = () => {
@@ -182,40 +193,41 @@ export function speak(text, profile = NARRATOR) {
       return u;
     };
 
-    // Plan B: wybrany głos milczy (uszkodzony/sieciowy) — mów domyślnym
-    // głosem systemu, z transliteracją dopasowaną do języka systemu.
+    // Plan B: wybrany głos milczy — mów domyślnym głosem systemu
+    // (bez wymuszonego voice), w języku systemu.
     const retry = () => {
       if (retried || done) return;
       retried = true;
       synth.cancel();
-      const sysLang = (navigator.language || "en").toLowerCase();
-      const t = sysLang.startsWith("pl")
-        ? toPolish(text)
-        : sysLang.startsWith("en")
-          ? toEnglishPhonetic(text)
-          : text;
-      const u2 = makeUtterance(t, null, navigator.language || "en-US");
+      const sysLang = navigator.language || "en";
+      const u2 = makeUtterance(prepareText(text, sysLang), null, sysLang);
       u2.onerror = finish;
-      setTimeout(() => synth.speak(u2), 60);
+      synth.speak(u2);
+      // Chrome desktop czasem „pauzuje" kolejkę — odblokuj.
+      try { synth.resume(); } catch {}
     };
 
-    const u = makeUtterance(prepareText(text), voice, voice?.lang ?? "eo");
+    const { voice: v, lang } = resolveSpeech();
+    const u = makeUtterance(prepareText(text, lang), v, lang);
     u.onerror = (e) => {
       // Nasze własne cancel() (wyjście do mapy) nie jest awarią.
       if (e?.error === "canceled" || e?.error === "interrupted") finish();
       else retry();
     };
 
+    // KLUCZOWE: speak() synchronicznie w geście użytkownika — inaczej
+    // telefony blokują mowę. Żadnego setTimeout przed speak().
     synth.cancel();
-    // Chrome potrafi zgubić utterance wysłane tuż po cancel() —
-    // krótka przerwa omija ten bug.
-    setTimeout(() => synth.speak(u), 60);
+    synth.speak(u);
+    try { synth.resume(); } catch {}
+
+    // Głos się nie odezwał (np. uszkodzony) — spróbuj domyślnym.
     setTimeout(() => {
       if (!started && !done) retry();
-    }, 2000);
+    }, 1500);
 
     // Awaria TTS nigdy nie może zawiesić gry.
-    setTimeout(finish, 1600 + text.length * 130);
+    setTimeout(finish, 1800 + text.length * 130);
   });
 }
 

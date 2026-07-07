@@ -208,12 +208,19 @@ export class Game {
   onSeqTap(btn, obj) {
     const seq = this.task.sequence;
     if (obj.id === seq[this.seqIndex]) {
+      const num = document.createElement("span");
+      num.className = "seq-num";
+      num.textContent = String(this.seqIndex + 1); // widoczna kolejność, nie sam fakt trafienia
+      btn.appendChild(num);
       btn.classList.add("seq-done");
       this.seqIndex++;
       if (this.seqIndex >= seq.length) this.onCorrect(btn);
     } else {
       this.seqIndex = 0;
-      for (const b of el("objects").children) b.classList.remove("seq-done");
+      for (const b of el("objects").children) {
+        b.classList.remove("seq-done");
+        b.querySelectorAll(".seq-num").forEach((n) => n.remove());
+      }
       this.onWrong(btn);
     }
   }
@@ -351,46 +358,66 @@ export class Game {
       hand.classList.remove("tap");
     };
 
-    hand.classList.remove("hidden");
     const type = task.type ?? "tap";
 
-    if (type === "drag") {
+    // Jedno przejście demonstracji; zwraca false, gdy dziecko zdążyło
+    // zareagować (cancelHint unieważnia token) w trakcie animacji.
+    const passTap = async () => {
       const obj = objOf(task.correct);
-      if (!obj) return;
+      if (!obj) return false;
       placeInstant(centerOf(obj));
       hand.classList.add("visible");
       await wait(300);
-      if (!live()) return hand.classList.add("hidden");
-      await tapPulse(); // "chwyt" obiektu
-      if (!live()) return hand.classList.add("hidden");
-      await moveTo(centerOf(el("npc")));
-      if (!live()) return hand.classList.add("hidden");
-      await tapPulse(); // "wręczenie" NPC
-    } else if (type === "sequence") {
+      if (!live()) return false;
+      await tapPulse();
+      return live();
+    };
+
+    const passSequence = async () => {
       const first = objOf(task.sequence[0]);
-      if (!first) return;
+      if (!first) return false;
       placeInstant(centerOf(first));
       hand.classList.add("visible");
       for (const id of task.sequence) {
-        if (!live()) return hand.classList.add("hidden");
+        if (!live()) return false;
         const obj = objOf(id);
-        if (!obj) return hand.classList.add("hidden");
+        if (!obj) return false;
         await moveTo(centerOf(obj));
-        if (!live()) return hand.classList.add("hidden");
+        if (!live()) return false;
         await tapPulse();
         await wait(200);
       }
-    } else {
+      return live();
+    };
+
+    const passDrag = async () => {
       const obj = objOf(task.correct);
-      if (!obj) return;
+      if (!obj) return false;
       placeInstant(centerOf(obj));
       hand.classList.add("visible");
       await wait(300);
-      if (!live()) return hand.classList.add("hidden");
-      await tapPulse();
+      if (!live()) return false;
+      await tapPulse(); // "chwyt" obiektu
+      if (!live()) return false;
+      await moveTo(centerOf(el("npc")));
+      if (!live()) return false;
+      await tapPulse(); // "wręczenie" NPC
+      return live();
+    };
+
+    const pass = type === "drag" ? passDrag : type === "sequence" ? passSequence : passTap;
+
+    hand.classList.remove("hidden");
+    // Duszek powtarza gest w kółko, aż dziecko samo je wykona — każda
+    // prawdziwa interakcja woła cancelHint(), które unieważnia token
+    // i przerywa pętlę na najbliższym sprawdzeniu live().
+    while (live()) {
+      const finished = await pass();
+      if (!finished || !live()) break;
+      hand.classList.remove("visible");
+      await wait(500);
     }
 
-    await wait(300);
     hand.classList.remove("visible");
     hand.classList.add("hidden");
   }
@@ -510,16 +537,22 @@ export class Game {
       return;
     }
 
-    // Scenka przemiany: before → after, z konfetti i pochwałą NPC.
+    // Scenka: pokazujemy "before" i czekamy na stuknięcie dziecka — nic nie
+    // dzieje się samo, dopiero jego dotyk uruchamia przemianę.
     el("instruction").textContent = sk.line;
     el("npc").className = "npc happy";
-    el("objects").innerHTML = `<div id="skill-scene" class="skill-scene">${sk.before}</div>`;
+    el("objects").innerHTML = `<button id="skill-scene" class="skill-scene" aria-label="ago">${sk.before}</button>`;
+    const scene = el("skill-scene");
+    // Nasłuch podłączony NATYCHMIAST (nie po mowie) — dziecko może stuknąć
+    // scenkę, zanim NPC skończy mówić, i to wciąż ma zadziałać.
+    const tapped = new Promise((resolve) => scene.addEventListener("pointerdown", resolve, { once: true }));
     await speak(sk.line, this.voice);
     if (this.stale(s)) return;
-    await wait(400);
+
+    await tapped;
     if (this.stale(s)) return;
 
-    const scene = el("skill-scene");
+    playTap();
     scene.classList.add("transform");
     scene.textContent = sk.after;
     playSuccess();

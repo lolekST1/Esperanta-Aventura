@@ -1,4 +1,4 @@
-import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride } from "./audio.js";
+import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride, diagnostics, testVoice } from "./audio.js";
 import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
@@ -61,19 +61,44 @@ el("btn-speak").addEventListener("pointerdown", () => {
 
 const VOICE_SAMPLE = "Saluton! Mi estas Vulpo! Ni ludu kune!";
 
+function logVoiceEvent(kind, detail) {
+  const log = el("voice-log");
+  log.classList.remove("hidden");
+  const time = new Date().toLocaleTimeString();
+  const line = document.createElement("div");
+  line.className = "voice-log-line";
+  line.textContent = `${time} — ${kind}: ${detail}`;
+  log.prepend(line);
+  while (log.children.length > 8) log.removeChild(log.lastChild);
+}
+
+function renderDiagnostics() {
+  const d = diagnostics();
+  const box = el("voice-diagnostics");
+  box.innerHTML = `
+    speechSynthesis: ${d.hasSynth ? "✅ dostępne" : "❌ NIEDOSTĘPNE"}<br>
+    Liczba głosów: ${d.voiceCount}<br>
+    Język przeglądarki: ${d.lang}<br>
+    Tryb PWA (standalone): ${d.standalone ? "tak" : "nie"}<br>
+    Dźwięk (AudioContext): ${d.audioCtxState ?? "brak"}
+    ${d.likelyInAppBrowser ? `<br><strong>⚠️ To może być przeglądarka wbudowana w aplikację (np. Messenger/Instagram) — takie przeglądarki często blokują mowę. Spróbuj otworzyć link w Chrome lub Safari.</strong>` : ""}
+  `;
+}
+
 function renderVoiceList() {
+  renderDiagnostics();
   const { voices, current, saved } = getVoiceChoices();
   const list = el("voice-list");
   list.innerHTML = "";
 
-  const addItem = (label, id, active) => {
+  const addItem = (label, id, voiceObj, active) => {
     const btn = document.createElement("button");
     btn.className = "voice-item" + (active ? " active" : "");
     btn.textContent = label;
     btn.addEventListener("click", () => {
       setVoiceOverride(id);
-      speak(VOICE_SAMPLE);
-      renderVoiceList();
+      testVoice(voiceObj, VOICE_SAMPLE, logVoiceEvent);
+      renderVoiceList(); // odśwież zaznaczenie aktywnego głosu, log zostaje
     });
     list.appendChild(btn);
   };
@@ -81,11 +106,12 @@ function renderVoiceList() {
   addItem(
     `🔄 Automatycznie${!saved && current ? ` — ${current.name}` : ""}`,
     null,
+    current,
     !saved,
   );
   for (const v of voices) {
     const id = v.voiceURI ?? v.name;
-    addItem(`${v.name} — ${v.lang}`, id, saved === id);
+    addItem(`${v.name} — ${v.lang}`, id, v, saved === id);
   }
   if (!voices.length) {
     list.innerHTML = `<p class="vortaro-empty">Ta przeglądarka nie udostępnia żadnych głosów 😢</p>`;
@@ -93,6 +119,8 @@ function renderVoiceList() {
 }
 
 el("btn-voice").addEventListener("click", () => {
+  el("voice-log").innerHTML = "";
+  el("voice-log").classList.add("hidden");
   renderVoiceList();
   el("voice-screen").classList.remove("hidden");
 });

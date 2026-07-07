@@ -235,6 +235,52 @@ export function stopSpeech() {
   window.speechSynthesis?.cancel();
 }
 
+// Diagnostyka na żywo dla ekranu ⚙️ — gdy nawet ręczny wybór głosu milczy,
+// to nie jest już kwestia doboru głosu. Te fakty (bez devtools na
+// telefonie) pokazują, co dokładnie się dzieje.
+export function diagnostics() {
+  const ua = navigator.userAgent || "";
+  return {
+    hasSynth: "speechSynthesis" in window,
+    voiceCount: allVoices().length,
+    lang: navigator.language,
+    userAgent: ua,
+    standalone: window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true,
+    // "; wv)" w UA to oficjalny znacznik Android WebView — przeglądarki
+    // wbudowane w aplikacje (Messenger, Instagram...) często blokują TTS.
+    likelyInAppBrowser: /; ?wv\)/i.test(ua) || /\b(FBAN|FBAV|Instagram|MicroMessenger|Line\/)\b/i.test(ua),
+    audioCtxState: ctx?.state ?? null,
+  };
+}
+
+// Wypowiedź testowa z pełnym śladem zdarzeń — do ekranu ⚙️. Nie używa
+// żadnych fallbacków/retry z speak(), żeby log pokazywał surowy wynik
+// dla DOKŁADNIE wybranego głosu.
+export function testVoice(v, text, onEvent) {
+  const synth = window.speechSynthesis;
+  if (!synth) {
+    onEvent("brak-api", "speechSynthesis niedostępne w tej przeglądarce");
+    return;
+  }
+  const lang = v?.lang || navigator.language || "en";
+  const u = new SpeechSynthesisUtterance(prepareText(text, lang));
+  if (v) u.voice = v;
+  u.lang = lang;
+  u.onstart = () => onEvent("onstart", "mowa wystartowała");
+  u.onend = () => onEvent("onend", "mowa zakończona normalnie");
+  u.onerror = (e) => onEvent("onerror", e?.error ?? "nieznany błąd");
+  onEvent("wywołanie", `speak() z głosem: ${v ? v.name : "(domyślny systemowy)"}`);
+  synth.cancel();
+  synth.speak(u);
+  try {
+    synth.resume();
+  } catch {}
+  setTimeout(() => {
+    if (synth.speaking || synth.pending) onEvent("status", "wciąż w kolejce po 3s");
+    else onEvent("status", "kolejka pusta po 3s (jeśli nie było onend/onerror — cisza bez zdarzenia)");
+  }, 3000);
+}
+
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function tone(freq, start, duration, type = "sine", gainValue = 0.25) {

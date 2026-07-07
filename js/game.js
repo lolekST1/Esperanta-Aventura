@@ -13,6 +13,9 @@ const el = (id) => document.getElementById(id);
 
 const CONFETTI = ["⭐", "🎉", "✨", "🌟", "💛"];
 
+// Duszek ręki: ile dziecko ma czasu, zanim pokażemy demonstrację.
+const HINT_DELAY_MS = 4000;
+
 function loadSave() {
   let save;
   try {
@@ -28,6 +31,7 @@ function loadSave() {
   save.storiesSeen ??= {};
   save.islandCelebrated ??= false;
   save.skillsDone ??= {};
+  save.hintsSeen ??= {};
   return save;
 }
 
@@ -91,6 +95,7 @@ export class Game {
   }
 
   loadZone(zone) {
+    this.cancelHint();
     this.zone = zone;
     this.taskIndex = 0;
     this.sessionStars = 0;
@@ -103,6 +108,7 @@ export class Game {
 
   // Wywoływane przy wyjściu do mapy — unieważnia trwające sekwencje.
   deactivate() {
+    this.cancelHint();
     this.active = false;
     this.session++;
   }
@@ -179,11 +185,14 @@ export class Game {
 
     this.locked = false;
     await speak(task.instruction, this.voice);
+    if (this.stale(s)) return;
+    this.scheduleHint(task, s);
   }
 
   onTap(btn, obj) {
     if (this.locked || !this.active) return;
     if (btn.classList.contains("seq-done")) return; // już zaliczony krok sekwencji
+    this.cancelHint();
     playTap();
     if (this.task.type === "sequence") return this.onSeqTap(btn, obj);
     if (obj.id === this.task.correct) {
@@ -216,6 +225,7 @@ export class Game {
     btn.style.touchAction = "none";
     btn.addEventListener("pointerdown", (e) => {
       if (this.locked || !this.active) return;
+      this.cancelHint();
       btn.setPointerCapture(e.pointerId);
       const startX = e.clientX;
       const startY = e.clientY;
@@ -288,6 +298,101 @@ export class Game {
       this.snapBack(btn);
       this.onWrong(btn);
     }
+  }
+
+  // ---------- Duszek ręki (demonstracja pierwszego zadania każdego typu) ----------
+  // Przy PIERWSZYM zadaniu danego typu ("tap"/"drag"/"sequence") w całej grze,
+  // jeśli dziecko samo nie zareaguje w ciągu chwili, na scenie pojawia się
+  // dłoń-duszek i pokazuje dokładnie co zrobić — nie klika za dziecko, tylko
+  // demonstruje. Znacznik hintsSeen zapisujemy natychmiast przy planowaniu,
+  // więc każdy typ dostaje tylko jedną szansę na pokazanie się w całej grze
+  // (kolejne zadania tego samego typu już nigdy nie pokazują duszka).
+  scheduleHint(task, s) {
+    const type = task.type ?? "tap";
+    if (this.save.hintsSeen[type]) return;
+    this.save.hintsSeen[type] = true;
+    persist(this.save);
+    this.hintTimer = setTimeout(() => {
+      if (this.stale(s) || this.locked) return;
+      this.showHint(task, s);
+    }, HINT_DELAY_MS);
+  }
+
+  cancelHint() {
+    clearTimeout(this.hintTimer);
+    this.hintToken = (this.hintToken ?? 0) + 1;
+    el("ghost-hand")?.classList.remove("visible", "tap");
+  }
+
+  async showHint(task, s) {
+    const token = this.hintToken ?? 0;
+    const live = () => this.hintToken === token && !this.stale(s);
+    const hand = el("ghost-hand");
+    const objOf = (id) => el("objects").querySelector(`[data-id="${id}"]`);
+    const centerOf = (elm) => {
+      const r = elm.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    const placeInstant = (pos) => {
+      hand.style.transition = "none";
+      hand.style.left = `${pos.x}px`;
+      hand.style.top = `${pos.y}px`;
+      hand.offsetHeight; // wymuś reflow, żeby kolejny ruch znów miał przejście
+      hand.style.transition = "";
+    };
+    const moveTo = async (pos) => {
+      hand.style.left = `${pos.x}px`;
+      hand.style.top = `${pos.y}px`;
+      await wait(650);
+    };
+    const tapPulse = async () => {
+      hand.classList.add("tap");
+      await wait(400);
+      hand.classList.remove("tap");
+    };
+
+    hand.classList.remove("hidden");
+    const type = task.type ?? "tap";
+
+    if (type === "drag") {
+      const obj = objOf(task.correct);
+      if (!obj) return;
+      placeInstant(centerOf(obj));
+      hand.classList.add("visible");
+      await wait(300);
+      if (!live()) return hand.classList.add("hidden");
+      await tapPulse(); // "chwyt" obiektu
+      if (!live()) return hand.classList.add("hidden");
+      await moveTo(centerOf(el("npc")));
+      if (!live()) return hand.classList.add("hidden");
+      await tapPulse(); // "wręczenie" NPC
+    } else if (type === "sequence") {
+      const first = objOf(task.sequence[0]);
+      if (!first) return;
+      placeInstant(centerOf(first));
+      hand.classList.add("visible");
+      for (const id of task.sequence) {
+        if (!live()) return hand.classList.add("hidden");
+        const obj = objOf(id);
+        if (!obj) return hand.classList.add("hidden");
+        await moveTo(centerOf(obj));
+        if (!live()) return hand.classList.add("hidden");
+        await tapPulse();
+        await wait(200);
+      }
+    } else {
+      const obj = objOf(task.correct);
+      if (!obj) return;
+      placeInstant(centerOf(obj));
+      hand.classList.add("visible");
+      await wait(300);
+      if (!live()) return hand.classList.add("hidden");
+      await tapPulse();
+    }
+
+    await wait(300);
+    hand.classList.remove("visible");
+    hand.classList.add("hidden");
   }
 
   async onCorrect(btn, { skipPop = false } = {}) {

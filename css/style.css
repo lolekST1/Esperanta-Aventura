@@ -20,6 +20,12 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
+  /* Treść wyśrodkowana przez margin:auto na .start-inner potrafi być
+     wyższa niż realnie widoczna wysokość telefonu (pasek adresu,
+     zakładki, nawigacja systemowa zjadają dużo miejsca) — bez tego
+     góra treści chowała się POD paskiem #topbar, a dolny przycisk był
+     ucięty poza ekranem, bez możliwości przewinięcia do niego. */
+  overflow-y: auto;
 }
 
 .hidden { display: none !important; }
@@ -90,9 +96,13 @@ h1, h2 {
 
 .island-win-npcs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
-  font-size: clamp(48px, 16vw, 80px);
+  /* Liczba NPC rośnie z każdą nową strefą (Faza 4 doda kolejne) — bez
+     zawijania rząd uciekał poza szerokość wąskich telefonów, bez
+     możliwości przewinięcia w poziomie (patrz overflow-y na .screen). */
+  font-size: clamp(40px, 14vw, 80px);
 }
 
 .island-win-npcs span { animation: bounce 1.6s ease-in-out infinite; }
@@ -110,6 +120,12 @@ h1, h2 {
 .island-win-stars {
   font-size: clamp(24px, 7vw, 36px);
   margin-bottom: 24px;
+}
+
+/* Te dwa ekrany pokazują #topbar (na start-screen/story-screen jest
+   ukryty) — odsuwamy treść, żeby jej góra nie chowała się pod paskiem. */
+#win-screen, #island-win-screen {
+  padding-top: 88px;
 }
 
 /* ---------- Pasek górny (wspólny dla mapy i gry) ---------- */
@@ -492,6 +508,31 @@ h1, h2 {
 }
 
 .skill-scene.transform { animation: pop 0.6s ease; }
+
+/* ---------- Duszek ręki (demonstracja pierwszego zadania każdego typu) ---------- */
+
+.ghost-hand {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  font-size: 52px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 15;
+  transition: left 0.6s ease, top 0.6s ease, opacity 0.3s ease;
+  filter: drop-shadow(0 4px 6px #00000055);
+}
+
+.ghost-hand.hidden { display: none; }
+.ghost-hand.visible { opacity: 0.85; }
+
+.ghost-hand.tap { animation: hint-tap 0.4s ease; }
+
+@keyframes hint-tap {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  40% { transform: translate(-50%, -50%) scale(0.7); }
+}
 
 /* ---------- Nagroda ---------- */
 

@@ -25,7 +25,7 @@ export const ZONES = {
       emoji: "🦊",
       name: "Vulpo",
       greeting: "Saluton! Mi estas Vulpo! Ni ludu kune!",
-      voice: { rate: 1.05, pitch: 1.4 },
+      voice: { rate: 1.05, pitch: 1.4, id: "vulpo" },
     },
     // Krótka historyjka — gra się raz, przy pierwszym wejściu do strefy,
     // zaraz po powitaniu, zanim zaczną się zadania.
@@ -114,7 +114,7 @@ export const ZONES = {
       emoji: "🐻",
       name: "Urso",
       greeting: "Saluton, kara amiko... Mi estas Urso. Bonvenon.",
-      voice: { rate: 0.68, pitch: 0.6 },
+      voice: { rate: 0.68, pitch: 0.6, id: "urso" },
     },
     story: [
       "Mi serĉas manĝaĵojn por mia hejmo...",
@@ -219,7 +219,7 @@ export const ZONES = {
       emoji: "🦜",
       name: "Papago",
       greeting: "Saluton! Saluton! Mi estas Papago! Papago!",
-      voice: { rate: 1.15, pitch: 1.8 },
+      voice: { rate: 1.15, pitch: 1.8, id: "papago" },
     },
     story: [
       "La bestoj kaŝiĝis en la arbaro! Kaŝiĝis!",

@@ -1,0 +1,9 @@
+{
+  "name": "esperanta-aventuro",
+  "private": true,
+  "type": "module",
+  "description": "Gra edukacyjna do nauki esperanta — czysta statyczna PWA (bez build stepu). package.json istnieje wyłącznie dla scripts/generate-tts.mjs.",
+  "scripts": {
+    "generate-tts": "node scripts/generate-tts.mjs"
+  }
+}

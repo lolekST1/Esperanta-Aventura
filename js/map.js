@@ -67,8 +67,21 @@ export function renderMap(game, onSelect) {
 
     const done = progress?.done ? `⭐${progress.stars}` : "🆕";
     const status = !unlocked ? "🔒" : done + (skillReady ? "✨" : "");
+    // Sekret gotowy do odkrycia: gwiazdki skrzą się wokół znacznika,
+    // każda z innym opóźnieniem, żeby migotanie wyglądało żywo.
+    const sparkles = skillReady
+      ? `<span class="marker-sparkles" aria-hidden="true">
+           <span class="spark spark-1">✨</span>
+           <span class="spark spark-2">⭐</span>
+           <span class="spark spark-3">✨</span>
+           <span class="spark spark-4">⭐</span>
+         </span>`
+      : "";
     marker.innerHTML = `
-      <span class="map-marker-emoji">${zone.mapEmoji}<span class="map-marker-npc">${zone.npc.emoji}</span></span>
+      <span class="map-marker-emoji">
+        ${zone.mapEmoji}<span class="map-marker-npc">${zone.npc.emoji}</span>
+        ${sparkles}
+      </span>
       <span class="map-marker-label">${zone.name}</span>
       <span class="map-marker-status">${status}</span>
     `;

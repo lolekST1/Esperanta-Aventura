@@ -323,6 +323,30 @@ h1, h2 {
 
 .map-marker.new .map-marker-emoji { animation: invite-pulse 1.8s ease-in-out infinite; }
 
+/* Sekret (akcja-słowo) gotowy do odkrycia: gwiazdki skrzące się dookoła znacznika. */
+.marker-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spark {
+  position: absolute;
+  font-size: 15px;
+  opacity: 0;
+  animation: twinkle 1.6s ease-in-out infinite;
+}
+
+.spark-1 { top: -8px; left: -10px; animation-delay: 0s; }
+.spark-2 { top: -10px; right: -8px; animation-delay: 0.4s; }
+.spark-3 { bottom: -6px; left: -8px; animation-delay: 0.8s; }
+.spark-4 { bottom: -8px; right: -10px; animation-delay: 1.2s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(20deg); }
+}
+
 .map-avatar {
   position: absolute;
   transform: translate(-50%, -82%);

@@ -6,6 +6,7 @@
 // sekwencje async, gdy dziecko wyjdzie do mapy w połowie zadania.
 
 import { speak, playSuccess, playRetry, playTap, wait, NARRATOR } from "./audio.js";
+import { ZONES } from "./data/zones.js";
 
 const SAVE_KEY = "esperanta-aventuro-save-v1";
 
@@ -15,6 +16,27 @@ const CONFETTI = ["⭐", "🎉", "✨", "🌟", "💛"];
 
 // Duszek ręki: ile dziecko ma czasu, zanim pokażemy demonstrację.
 const HINT_DELAY_MS = 4000;
+
+// Adaptacyjne powtórki: ile słówek maksymalnie dokłada się na koniec strefy.
+const MAX_REVIEW_TASKS = 2;
+
+// Mapa słowo → jego oryginalne zadanie, budowana raz z całego zestawu stref.
+// Pozwala niewidocznie "pożyczyć" dowolne zadanie (z dowolnej strefy) jako
+// powtórkę — silnik wciąż nie zna ŻADNYCH konkretnych słówek, tylko
+// generycznie indeksuje pole reward.word, które już i tak jest w danych.
+let _wordTaskIndex = null;
+function wordTaskIndex() {
+  if (_wordTaskIndex) return _wordTaskIndex;
+  _wordTaskIndex = new Map();
+  for (const zone of Object.values(ZONES)) {
+    for (const task of zone.tasks) {
+      if (task.reward?.word && !_wordTaskIndex.has(task.reward.word)) {
+        _wordTaskIndex.set(task.reward.word, task);
+      }
+    }
+  }
+  return _wordTaskIndex;
+}
 
 function loadSave() {
   let save;
@@ -32,6 +54,7 @@ function loadSave() {
   save.islandCelebrated ??= false;
   save.skillsDone ??= {};
   save.hintsSeen ??= {};
+  save.mistakes ??= {};
   return save;
 }
 
@@ -72,8 +95,29 @@ export class Game {
     return this.zone?.npc.voice ?? NARRATOR;
   }
 
+  // Zadania strefy + niewidoczne powtórki dołożone na końcu (buildReviewQueue).
   get task() {
-    return this.zone?.tasks[this.taskIndex];
+    const base = this.zone?.tasks ?? [];
+    if (this.taskIndex < base.length) return base[this.taskIndex];
+    return this.reviewQueue?.[this.taskIndex - base.length];
+  }
+
+  // Adaptacyjne powtórki: po wyczerpaniu zwykłych zadań strefy dokładamy do
+  // MAX_REVIEW_TASKS zadań odpowiadających słówkom, w których dziecko
+  // ostatnio się myliło (gdziekolwiek w grze) — bez żadnego oznaczenia
+  // "to jest powtórka", więc dla dziecka wygląda jak zwykłe kolejne zadanie.
+  buildReviewQueue() {
+    const entries = Object.entries(this.save.mistakes).filter(([, n]) => n > 0);
+    if (!entries.length) return [];
+    entries.sort((a, b) => b[1] - a[1]); // najpierw najczęściej mylone
+    const index = wordTaskIndex();
+    const picked = [];
+    for (const [word] of entries) {
+      const task = index.get(word);
+      if (task) picked.push(task);
+      if (picked.length >= MAX_REVIEW_TASKS) break;
+    }
+    return picked;
   }
 
   setAvatar(avatar) {
@@ -102,6 +146,7 @@ export class Game {
     this.locked = true;
     this.active = true;
     this.session++;
+    this.reviewQueue = this.buildReviewQueue();
     el("npc").textContent = zone.npc.emoji;
     this.renderSkillSpot();
   }
@@ -427,6 +472,14 @@ export class Game {
     this.locked = true;
     const reward = this.task.reward;
 
+    // Poprawna odpowiedź na zadanie-powtórkę "spłaca" wcześniejsze pomyłki —
+    // słówko przestaje się doklejać do kolejnych stref, dopóki znów się nie pomyli.
+    const isReview = this.taskIndex >= (this.zone.tasks?.length ?? 0);
+    if (isReview && reward?.word) {
+      this.save.mistakes[reward.word] = 0;
+      persist(this.save);
+    }
+
     // Celebracja: taniec NPC, konfetti, fanfary, pochwała do końca.
     if (!skipPop) btn.classList.add("correct");
     el("npc").className = "npc dance";
@@ -456,6 +509,14 @@ export class Game {
     this.locked = true;
     btn.classList.add("wrong");
     el("npc").className = "npc thinking";
+
+    // Niewidoczne śledzenie pomyłek: to słówko staje się kandydatem do
+    // powtórki na końcu jakiejś przyszłej strefy (buildReviewQueue).
+    const word = this.task.reward?.word;
+    if (word) {
+      this.save.mistakes[word] = (this.save.mistakes[word] ?? 0) + 1;
+      persist(this.save);
+    }
 
     const phrase = randomOf(this.zone.retryPhrases);
     el("instruction").textContent = phrase;
@@ -621,6 +682,7 @@ export class Game {
     this.sessionStars = 0;
     this.active = true;
     this.session++;
+    this.reviewQueue = this.buildReviewQueue();
     this.showTask();
   }
 

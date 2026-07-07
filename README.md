@@ -182,7 +182,14 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
   „pordo" z Vilaĝo), skill "helpi" (uczony w Marbordo) otwiera sekretną komnatę.
   Wyspa ma teraz 6 stref — mapa, kolejność odblokowania i finał (7 postaci:
   awatar + 6 NPC) objęły ją automatycznie, bez zmian w silniku
-- adaptacyjne powtórki: słówka z pomyłkami wracają częściej (niewidoczne spaced repetition)
+- ✅ adaptacyjne powtórki: każda pomyłka podbija licznik `save.mistakes[słowo]`;
+  po wyczerpaniu zwykłych zadań strefy silnik niewidocznie dokłada do 2 zadań
+  odpowiadających najczęściej mylonym słówkom — z DOWOLNEJ strefy, nie tylko
+  bieżącej (generyczny indeks słowo → zadanie budowany raz ze wszystkich
+  `ZONES`). Dziecko widzi zwykłe kolejne "Trovu la...!", bez żadnego oznaczenia
+  "to jest powtórka". Poprawna odpowiedź na powtórkę zeruje licznik (słówko
+  przestaje wracać, dopóki znów się nie pomyli) — silnik wciąż nie zna żadnych
+  KONKRETNYCH słówek, tylko generycznie operuje na polu `reward.word`
 - opcjonalnie: rozpoznawanie mowy (dziecko odpowiada głosem), tryb rodzica z podglądem postępów
 
 ### Jak dodać nowe treści

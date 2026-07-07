@@ -1,0 +1,35 @@
+name: Deploy to GitHub Pages
+
+# Publikacja przez gałąź gh-pages: środowisko github-pages (utworzone
+# automatycznie przy włączeniu Pages) dopuszcza deploye tylko z gh-pages,
+# więc workflow wypycha tam zawartość gry zamiast używać deploy-pages.
+#
+# Brak filtra branches (celowo): każdy push na KAŻDĄ gałąź ma trafiać na
+# Pages od razu, żeby najświeższą wersję dało się przetestować na telefonie
+# bez czekania na merge PR-a.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push game content to gh-pages
+        run: |
+          rm -rf .github
+          touch .nojekyll
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan deploy-tmp
+          git add -A
+          git commit -m "Deploy ${GITHUB_SHA}"
+          git push origin deploy-tmp:gh-pages --force

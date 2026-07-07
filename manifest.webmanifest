@@ -1,0 +1,19 @@
+{
+  "name": "Esperanta Aventuro",
+  "short_name": "Aventuro",
+  "description": "Ludante lernu Esperanton! Gra edukacyjna do nauki esperanta dla dzieci.",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#aee7ff",
+  "theme_color": "#7ec850",
+  "lang": "eo",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

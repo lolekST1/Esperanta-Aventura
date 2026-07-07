@@ -99,7 +99,13 @@ const PL_MAP = {
 };
 
 function toPolish(text) {
-  return text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvVcC]/g, (ch) => PL_MAP[ch] ?? ch);
+  const mapped = text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvVcC]/g, (ch) => PL_MAP[ch] ?? ch);
+  // W esperanto każda samogłoska jest osobną sylabą — nie ma dyftongów
+  // ani zmiękczeń. Polski czyta "i" przed samogłoską jako zmiękczenie
+  // poprzedniej spółgłoski + zlanie w jedną sylabę (radio→"radjo"), więc
+  // "papilio" wychodziłoby jako "papiljo" zamiast pa-pi-li-o. Wymuszamy
+  // rozdzielenie łącznikiem: papilio→papili-o, sciuro→sciu-ro (po ts).
+  return mapped.replace(/i([aeou])/gi, "i-$1");
 }
 
 // Niektóre neuronowe silniki TTS (zaobserwowane na Androidzie) wykrywają

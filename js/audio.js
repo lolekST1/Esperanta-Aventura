@@ -83,10 +83,10 @@ function resolveSpeech() {
 }
 
 // Polski głos czyta esperanto niemal poprawnie, jeśli zapisać tekst
-// polską ortografią (ŝ→sz, ĝ→dż, v→w, ŭ→ł...). Esperanckie "c" to zawsze
-// /ts/ — zapisujemy to jawnie jako "ts" (polskie "ci" spalatalizowałoby
-// dźwięk na "ć", czego esperanto nie robi), co przy okazji rozbija
-// wzorzec "sci" (patrz breakKnownLookalikes niżej).
+// polską ortografią (ŝ→sz, ĝ→dż, v→w, ŭ→ł...). Zwykłe "c" ZOSTAWIAMY
+// bez zmian — próba jawnego zapisu jako "ts" (sciuro→stsiuro) brzmiała
+// gorzej niż oryginał (jak "stiuro"); wystarczy sam rozdział sylab
+// z reguły hiatusu niżej (sciuro→sci-uro).
 const PL_MAP = {
   "ĉ": "cz", "Ĉ": "Cz",
   "ĝ": "dż", "Ĝ": "Dż",
@@ -95,16 +95,15 @@ const PL_MAP = {
   "ŝ": "sz", "Ŝ": "Sz",
   "ŭ": "ł", "Ŭ": "Ł",
   "v": "w", "V": "W",
-  "c": "ts", "C": "Ts",
 };
 
 function toPolish(text) {
-  const mapped = text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvVcC]/g, (ch) => PL_MAP[ch] ?? ch);
+  const mapped = text.replace(/[ĉĈĝĜĥĤĵĴŝŜŭŬvV]/g, (ch) => PL_MAP[ch] ?? ch);
   // W esperanto każda samogłoska jest osobną sylabą — nie ma dyftongów
   // ani zmiękczeń. Polski czyta "i" przed samogłoską jako zmiękczenie
   // poprzedniej spółgłoski + zlanie w jedną sylabę (radio→"radjo"), więc
   // "papilio" wychodziłoby jako "papiljo" zamiast pa-pi-li-o. Wymuszamy
-  // rozdzielenie łącznikiem: papilio→papili-o, sciuro→sciu-ro (po ts).
+  // rozdzielenie łącznikiem: papilio→papili-o, sciuro→sci-uro.
   return mapped.replace(/i([aeou])/gi, "i-$1");
 }
 

@@ -28,7 +28,8 @@
 // NPC mają osobowości słyszalne we frazach ORAZ w głosie (voice: rate/pitch
 // dla TTS): Vulpo jest szybki i wysoki, Urso powolny i niski, Papago
 // wysoki, skrzekliwy i wszystko powtarza dwa razy, Strigo mądry i spokojny,
-// Kankro żywiołowy i mówi z charakterystycznym "Klik-klik!".
+// Kankro żywiołowy i mówi z charakterystycznym "Klik-klik!", Drako głęboki,
+// powolny i dramatyczny (zaczyna kwestie od "Ha!").
 
 export const ZONES = {
   fruktejo: {
@@ -629,8 +630,139 @@ export const ZONES = {
       },
     ],
   },
+
+  kastelo: {
+    id: "kastelo",
+    name: "Kastelo",
+    mapEmoji: "🏰",
+    map: { x: 25, y: 45 },
+    npc: {
+      id: "drako",
+      emoji: "🐉",
+      name: "Drako",
+      greeting: "Haaa! Mi estas Drako, gardanto de la kastelo!",
+      voice: { rate: 0.75, pitch: 0.55 },
+    },
+    story: [
+      "Mi gardas ĉi tiun kastelon jam de longege...",
+      "Ĉu vi estas sufiĉe kuraĝa por helpi min?",
+    ],
+    winText: "Ha! Vi estas vere kuraĝa! La kastelo nun estas via amiko!",
+    retryPhrases: [
+      "Ha... provu denove!",
+      "Ne tute, kuraĝulo! Provu ankoraŭ!",
+      "Preskaŭ! Rigardu bone!",
+    ],
+    successPhrases: ["Ha! Bonege!", "Vere kuraĝe!", "Perfekte, amiko!", "Brave!"],
+    // "helpi" uczy się w Marbordo — akcja dostępna od pierwszej wizyty.
+    skill: {
+      word: "helpi",
+      emoji: "🗝️",
+      before: "🏯",
+      after: "✨🏯",
+      line: "Vi konas la vorton helpi! Helpu min malfermi la sekretan ĉambron!",
+      praise: "Ha! Dankon pro via helpo, kuraĝa amiko!",
+      lockedLine: "Ha... tio estas sekreto. Lernu pli da vortoj unue!",
+      reward: { word: "trezoro", emoji: "💰" },
+    },
+    tasks: [
+      {
+        instruction: "Trovu la turon!",
+        objects: [
+          { id: "turo", emoji: "🗼" },
+          { id: "slosilo", emoji: "🔑" },
+          { id: "krono", emoji: "👑" },
+        ],
+        correct: "turo",
+        reward: { word: "turo", emoji: "🗼" },
+      },
+      {
+        instruction: "Trovu la ŝlosilon!",
+        objects: [
+          { id: "krono", emoji: "👑" },
+          { id: "slosilo", emoji: "🔑" },
+          { id: "glavo", emoji: "⚔️" },
+        ],
+        correct: "slosilo",
+        reward: { word: "ŝlosilo", emoji: "🔑" },
+      },
+      {
+        instruction: "Trovu la kronon!",
+        objects: [
+          { id: "glavo", emoji: "⚔️" },
+          { id: "turo", emoji: "🗼" },
+          { id: "krono", emoji: "👑" },
+        ],
+        correct: "krono",
+        reward: { word: "krono", emoji: "👑" },
+      },
+      {
+        instruction: "Trovu la glavon!",
+        objects: [
+          { id: "sildo", emoji: "🛡️" },
+          { id: "glavo", emoji: "⚔️" },
+          { id: "slosilo", emoji: "🔑" },
+        ],
+        correct: "glavo",
+        reward: { word: "glavo", emoji: "⚔️" },
+      },
+      {
+        instruction: "Trovu la ŝildon!",
+        objects: [
+          { id: "sildo", emoji: "🛡️" },
+          { id: "krono", emoji: "👑" },
+          { id: "turo", emoji: "🗼" },
+        ],
+        correct: "sildo",
+        reward: { word: "ŝildo", emoji: "🛡️" },
+      },
+      {
+        // Longa frazo: konata vorto "granda"-stila skalo, nova adjektivo "alta".
+        instruction: "Tuŝu la altan turon!",
+        objects: [
+          { id: "alta-turo", emoji: "🗼", scale: 1.35 },
+          { id: "malalta-turo", emoji: "🗼", scale: 0.6 },
+        ],
+        correct: "alta-turo",
+        reward: { word: "alta", emoji: "📏" },
+      },
+      {
+        instruction: "Tuŝu la malaltan turon!",
+        objects: [
+          { id: "alta-turo2", emoji: "🗼", scale: 1.35 },
+          { id: "malalta-turo2", emoji: "🗼", scale: 0.6 },
+        ],
+        correct: "malalta-turo2",
+        reward: { word: "malalta", emoji: "🔻" },
+      },
+      {
+        type: "drag",
+        instruction: "Donu la ŝlosilon al Drako!",
+        objects: [
+          { id: "slosilo", emoji: "🔑" },
+          { id: "krono", emoji: "👑" },
+          { id: "glavo", emoji: "⚔️" },
+        ],
+        correct: "slosilo",
+        reward: { word: "malfermi", emoji: "🔓" },
+      },
+      {
+        // Wieloetapowe zadanie: 3 kroki zamiast 2, plus przypomnienie "pordo" z Vilaĝo.
+        type: "sequence",
+        instruction: "Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!",
+        objects: [
+          { id: "slosilo", emoji: "🔑" },
+          { id: "pordo", emoji: "🚪" },
+          { id: "krono", emoji: "👑" },
+          { id: "glavo", emoji: "⚔️" },
+        ],
+        sequence: ["slosilo", "pordo", "krono"],
+        reward: { word: "regno", emoji: "🏯" },
+      },
+    ],
+  },
 };
 
 // Kolejność na mapie = kolejność odblokowywania (ukończ strefę,
 // by otworzyć następną).
-export const ZONE_ORDER = ["fruktejo", "vilago", "arbaro", "monto", "marbordo"];
+export const ZONE_ORDER = ["fruktejo", "vilago", "arbaro", "monto", "marbordo", "kastelo"];

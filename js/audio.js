@@ -242,7 +242,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v21-marbordo";
+export const GAME_VERSION = "v22-kastelo";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

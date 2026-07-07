@@ -175,7 +175,13 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ Marbordo 🏖️ — NPC 🦀 Kankro (żywiołowy, "Klik-klik!"), słownictwo
   pogody i emocji (pluvo/vento/nubo/ĉielarko/feliĉa/trista + drag + sequence),
   skill "nokto" (uczony w Monto) odsłania gwiaździste niebo nad morzem
-- ⬜ Kastelo 🏰 (dłuższe zdania, zadania wieloetapowe)
+- ✅ Kastelo 🏰 — NPC 🐉 Drako (głęboki, dramatyczny, "Ha!"), dłuższe zdania
+  („Tuŝu la altan turon!" — nowe przymiotniki alta/malalta w stylu skali
+  granda/malgranda), zadanie wieloetapowe: sekwencja na 3 kroki zamiast 2
+  („Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!" — z przypomnieniem
+  „pordo" z Vilaĝo), skill "helpi" (uczony w Marbordo) otwiera sekretną komnatę.
+  Wyspa ma teraz 6 stref — mapa, kolejność odblokowania i finał (7 postaci:
+  awatar + 6 NPC) objęły ją automatycznie, bez zmian w silniku
 - adaptacyjne powtórki: słówka z pomyłkami wracają częściej (niewidoczne spaced repetition)
 - opcjonalnie: rozpoznawanie mowy (dziecko odpowiada głosem), tryb rodzica z podglądem postępów
 

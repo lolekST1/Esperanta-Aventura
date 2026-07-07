@@ -126,6 +126,8 @@ const TRICKY_WORDS = [
   "Unue tuŝu la sunon, poste la lunon!",
   "Trovu la ĉielarkon!",
   "Tuŝu la feliĉan vizaĝon!",
+  "Trovu la ŝlosilon!",
+  "Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!",
 ];
 
 function renderTrickyWords() {

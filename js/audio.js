@@ -22,6 +22,7 @@ import { AUDIO_MANIFEST } from "./data/audioManifest.js";
 let voice = null;
 let ctx = null;
 let currentAudio = null;
+let pendingRecordingFinish = null;
 
 const VOICE_KEY = "esperanta-aventuro-voice";
 const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
@@ -187,6 +188,10 @@ export const NARRATOR = { rate: 0.85, pitch: 1.0 };
 // używany w grze przy zdobyciu nagrody i przy odtwarzaniu z Vortaro.
 export const REWARD_VOICE = { rate: 0.7, pitch: 1.15 };
 
+// Cichy plik używany wyłącznie do odblokowania odtwarzania <audio> w
+// initAudio() — osobny element, żeby nie ruszać currentAudio.
+const UNLOCK_SRC = "assets/audio/_unlock.mp3";
+
 // Musi dawać IDENTYCZNY wynik co profileKey() w tools/generate-tts.mjs —
 // to ten sam klucz z dwóch stron (generator zapisuje, runtime odczytuje).
 function manifestKey(text, profile) {
@@ -216,8 +221,14 @@ export function initAudio() {
   // Analogiczne odblokowanie dla odtwarzania nagrań mp3 (osobny mechanizm
   // przeglądarki niż speechSynthesis) — bez tego pierwsze Audio().play()
   // poza gestem użytkownika mogłoby zostać zablokowane na iOS Safari.
+  // Element BEZ src (jak poprzednio) w wielu przeglądarkach nie liczy się
+  // jako prawdziwe odtworzenie i nie odblokowuje niczego — używamy
+  // prawdziwego (cichego) pliku na osobnym, jednorazowym elemencie, żeby
+  // nie ruszać `currentAudio` używanego przez właściwe odtwarzanie.
   try {
-    new Audio().play().catch(() => {});
+    const unlock = new Audio(UNLOCK_SRC);
+    unlock.volume = 0;
+    unlock.play().then(() => unlock.pause()).catch(() => {});
   } catch {}
 }
 
@@ -226,6 +237,7 @@ export function initAudio() {
 // dziecko nigdy nie zostaje bez żadnej mowy z powodu jednego złego pliku.
 function playRecording(src, text, profile) {
   currentAudio?.pause();
+  pendingRecordingFinish?.(); // poprzednie odtwarzanie przerwane — rozwiąż jego obietnicę
   return new Promise((resolve) => {
     const audio = new Audio(src);
     currentAudio = audio;
@@ -233,13 +245,21 @@ function playRecording(src, text, profile) {
     const finish = () => {
       if (settled) return;
       settled = true;
+      pendingRecordingFinish = null;
       resolve();
     };
     const fallback = () => {
       if (settled) return;
       settled = true;
+      pendingRecordingFinish = null;
       speakSynthesized(text, profile).then(resolve);
     };
+    // Wywoływane przez stopSpeech() (np. wyjście do mapy w trakcie mowy) —
+    // audio.pause() sam z siebie NIE odpala "ended" ani "error", więc bez
+    // tego ta obietnica wisiałaby (i cała sekwencja await speak() w game.js)
+    // zawieszona do końca sesji. To NIE jest błąd, więc rozwiązujemy finish(),
+    // nie fallback().
+    pendingRecordingFinish = finish;
     audio.addEventListener("ended", finish);
     audio.addEventListener("error", fallback);
     audio.play().catch(fallback);
@@ -296,6 +316,7 @@ function speakSynthesized(text, profile = NARRATOR) {
 export function stopSpeech() {
   window.speechSynthesis?.cancel();
   currentAudio?.pause();
+  pendingRecordingFinish?.();
 }
 
 // Diagnostyka na żywo dla ekranu ⚙️ — gdy nawet ręczny wybór głosu milczy,
@@ -304,7 +325,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v24-tts-fluo";
+export const GAME_VERSION = "v25-tts-fix";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

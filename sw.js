@@ -5,7 +5,7 @@
 // spadamy na to, co jest w cache. Bez tego stara wersja gry potrafiła
 // zostać w PWA nawet po wdrożeniu poprawki, dopóki ktoś nie zamknął
 // i nie otworzył aplikacji kilka razy (mylące przy debugowaniu na żywo).
-const CACHE = "esperanta-aventuro-v24";
+const CACHE = "esperanta-aventuro-v25";
 const ASSETS = [
   ".",
   "index.html",
@@ -20,6 +20,7 @@ const ASSETS = [
   "js/data/story.js",
   "js/data/audioManifest.js",
   "assets/icon.svg",
+  "assets/audio/_unlock.mp3",
 ];
 
 const CODE_PATTERN = /\.(js|css|html)$/;
@@ -55,6 +56,15 @@ self.addEventListener("fetch", (e) => {
         .catch(() => caches.match(e.request))
     );
   } else {
-    e.respondWith(caches.match(e.request).then((cached) => cached || fetch(e.request)));
+    e.respondWith(
+      caches.match(e.request).then(
+        (cached) =>
+          cached ||
+          fetch(e.request).then((res) => {
+            caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
+            return res;
+          })
+      )
+    );
   }
 });

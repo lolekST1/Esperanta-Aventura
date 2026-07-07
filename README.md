@@ -130,10 +130,11 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 - ✅ strefa Vilaĝo 🏡 z misiem Urso (dom, jedzenie, granda/malgranda przez skalę obiektów)
 - ✅ strefa Arbaro 🌳 z papugą Papago (zwierzęta, czasowniki ruchu — obiekty *animowane*: „Tuŝu la saltantan beston!")
 - ✅ zapis postępu per strefa (gwiazdki, ukończenie)
-- ✅ flow generowania nagrań lektorskich przez OpenAI TTS — patrz sekcja
-  „🎙️ Nagrania lektorskie (OpenAI TTS)" niżej. Gra działa identycznie bez
-  uruchamiania generatora (pusty manifest = pełny fallback na Web Speech),
-  więc to bezpieczne, stopniowe ulepszenie, nie wymóg
+- ✅ nagrania lektorskie przez OpenAI TTS — WYGENEROWANE dla wszystkich
+  197 kwestii gry (patrz sekcja „🎙️ Nagrania lektorskie (OpenAI TTS)"
+  niżej). Web Speech zostaje jako fallback (na wypadek braku pliku albo
+  błędu odtwarzania), ale w normalnych warunkach gra mówi już nagranymi
+  głosami
 
 **Faza 2.5 (✅)** — fabuła, personalizacja i żywe audio
 - ✅ bajka wprowadzająca: lot balonem na wyspę Esperantio (powtarzalna z mapy 📜)
@@ -200,10 +201,14 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
 
 Web Speech API (darmowe głosy przeglądarki) działa jako fallback zawsze
 dostępny, ale bywa niespójne między urządzeniami i wymaga transliteracji-
--obejść (patrz komentarze w `js/audio.js`). Docelowo gra ma używać gotowych
-nagrań mp3 wygenerowanych raz, offline, przez OpenAI TTS — testy wykazały,
-że głosy **Cedar, Marin i Nova** poprawnie wymawiają esperanckie słowa testowe
-(sciuro, birdo, hundino) bez żadnych sztuczek.
+-obejść (patrz komentarze w `js/audio.js`). Gra używa więc gotowych nagrań
+mp3, wygenerowanych raz, offline, przez OpenAI TTS — testy wykazały, że
+głosy **Marin, Nova, Sage i Coral** poprawnie wymawiają esperanckie słowa
+testowe (sciuro, birdo, hundino) bez żadnych sztuczek; **Shimmer, Cedar i
+Verse odrzucone** po odsłuchu (gorsza wymowa esperanckich skupisk
+spółgłosek, np. „sciuro" czytane jak angielskie „sh..."). Wyjątek: smok
+Drako dostał głos **Onyx** (żaden ze zweryfikowanych głosów nie brzmiał
+jak głęboki, dramatyczny smok) — jeszcze niepotwierdzony odsłuchem.
 
 **Jak to działa:**
 
@@ -211,9 +216,16 @@ nagrań mp3 wygenerowanych raz, offline, przez OpenAI TTS — testy wykazały,
    w grze (powitania NPC, historyjki, instrukcje zadań, frazy sukcesu/
    pomyłki, teksty umiejętności, słówka-nagrody, bajka wprowadzająca, kilka
    stałych fraz interfejsu) — bezpośrednio z `js/data/zones.js` i
-   `js/data/story.js`, więc nie trzeba niczego wypisywać ręcznie.
+   `js/data/story.js`, więc nie trzeba niczego wypisywać ręcznie. Przed
+   wysłaniem do API tekst przechodzi `preprocessEsperantoForTTS()` —
+   rozbija myślnikiem trudne skupiska spółgłosek (`sc→s-ts`, `kn→k-n`,
+   `gn→g-n`, `pn→p-n`, `ps→p-s`, `mn→m-n`) i ziew samogłoskowy
+   (`i([aeou])→i-$1`, np. „papilio"→„papili-o") — bez tego model bywa
+   skłonny czytać je jak angielskie odpowiedniki. Do zapytania dołączona
+   jest też szczegółowa instrukcja esperanckiej fonetyki (`instructions`,
+   działa z modelem `gpt-4o-mini-tts`).
 2. Każdy z 6 NPC (+ narrator + osobny profil dla wolno wymawianych słówek-
-   -nagród) ma przypisany jeden z trzech zweryfikowanych głosów OpenAI,
+   -nagród) ma przypisany jeden ze zweryfikowanych głosów OpenAI,
    różnicowany tempem i stylem (`ROLES` w skrypcie) — sam skrypt woła
    `POST https://api.openai.com/v1/audio/speech` (model `gpt-4o-mini-tts`
    domyślnie) i zapisuje wynik jako `assets/audio/<rola>-<hash>.mp3`.
@@ -223,6 +235,13 @@ nagrań mp3 wygenerowanych raz, offline, przez OpenAI TTS — testy wykazały,
    albo odtwarzanie się nie powiedzie (brak pliku, błąd sieci) — **zawsze**
    przezroczyście spada na dotychczasową syntezę Web Speech. Gra nigdy nie
    wymaga nagrań, żeby działać.
+
+**Uwaga o generacjach TTS:** OpenAI TTS czasem zwraca niemal ciche nagranie
+dla pojedynczego, krótkiego słowa (zdarzyło się to raz dla „dormi" —
+zmierzona amplituda ~0.001 zamiast typowych ~0.3-0.5). Zwykły retry
+(usunięcie pliku + ponowne uruchomienie skryptu) naprawia problem. Warto
+od czasu do czasu zmierzyć amplitudę wygenerowanych plików (Web Audio
+`decodeAudioData` + `getChannelData`), zwłaszcza dla nowych słówek-nagród.
 
 **Uruchomienie** (wymaga Node 18+ i klucza OpenAI):
 

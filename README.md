@@ -164,9 +164,18 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
   zagadki opisujące cechami: „Ĝi estas granda kaj alta...") w nowej strefie
   Monto 🏔️ (luno/suno/stelo/akvo/monto/nokto + zagadki używające już znanych
   słów granda i flugi)
+- ✅ akcje specjalne wymagają dotyku dziecka (nic nie dzieje się samo —
+  scena "before" czeka bezczynnie, dopóki dziecko jej nie stuknie),
+  numerki kolejności (1, 2, 3...) zamiast ticków w zadaniach sekwencji,
+  duszek ręki demonstrujący pierwsze zadanie każdego typu (tap/drag/
+  sequence) powtarza gest w kółko, dopóki dziecko go samo nie wykona,
+  a znacznik strefy z gotowym do odkrycia sekretem skrzy się gwiazdkami
 
-**Faza 4 — pełna gra**
-- Marbordo 🏖️ (pogoda, emocje), Kastelo 🏰 (dłuższe zdania, zadania wieloetapowe)
+**Faza 4 (w trakcie) — pełna gra**
+- ✅ Marbordo 🏖️ — NPC 🦀 Kankro (żywiołowy, "Klik-klik!"), słownictwo
+  pogody i emocji (pluvo/vento/nubo/ĉielarko/feliĉa/trista + drag + sequence),
+  skill "nokto" (uczony w Monto) odsłania gwiaździste niebo nad morzem
+- ⬜ Kastelo 🏰 (dłuższe zdania, zadania wieloetapowe)
 - adaptacyjne powtórki: słówka z pomyłkami wracają częściej (niewidoczne spaced repetition)
 - opcjonalnie: rozpoznawanie mowy (dziecko odpowiada głosem), tryb rodzica z podglądem postępów
 

@@ -27,7 +27,8 @@
 //
 // NPC mają osobowości słyszalne we frazach ORAZ w głosie (voice: rate/pitch
 // dla TTS): Vulpo jest szybki i wysoki, Urso powolny i niski, Papago
-// wysoki, skrzekliwy i wszystko powtarza dwa razy, Strigo mądry i spokojny.
+// wysoki, skrzekliwy i wszystko powtarza dwa razy, Strigo mądry i spokojny,
+// Kankro żywiołowy i mówi z charakterystycznym "Klik-klik!".
 
 export const ZONES = {
   fruktejo: {
@@ -508,8 +509,128 @@ export const ZONES = {
       },
     ],
   },
+
+  marbordo: {
+    id: "marbordo",
+    name: "Marbordo",
+    mapEmoji: "🏖️",
+    map: { x: 68, y: 58 },
+    npc: {
+      id: "kankro",
+      emoji: "🦀",
+      name: "Kankro",
+      greeting: "Klik-klik! Mi estas Kankro! Bonvenon al la marbordo!",
+      voice: { rate: 0.95, pitch: 1.3 },
+    },
+    story: [
+      "La vetero ĉi tie ŝanĝiĝas ĉiutage — kaj mi sentas ĉion!",
+      "Ĉu vi helpos min kompreni la veteron kaj miajn sentojn?",
+    ],
+    winText: "Klik-klik! Dankon! Nun mi komprenas la tutan veteron... kaj min mem!",
+    retryPhrases: [
+      "Klik... provu denove!",
+      "Ne tute... provu ankoraŭ, amiko!",
+      "Preskaŭ! Rigardu bone!",
+    ],
+    successPhrases: ["Klik-klik! Bonege!", "Perfekte!", "Hura, vi faris!", "Tre bone, amiko!"],
+    // "nokto" uczy się w Monto (nagroda za sekwencję) — akcja dostępna od pierwszej wizyty.
+    skill: {
+      word: "nokto",
+      emoji: "🔭",
+      before: "🏖️",
+      after: "🌌✨",
+      line: "Vi konas la vorton nokto! Rigardu la ĉielon super la maro!",
+      praise: "Klik-klik! Kiom da steloj super la maro!",
+      lockedLine: "Klik... tio estas sekreto por poste. Lernu pli da vortoj!",
+      reward: { word: "maro", emoji: "🌊" },
+    },
+    tasks: [
+      {
+        instruction: "Trovu la pluvon!",
+        objects: [
+          { id: "pluvo", emoji: "🌧️" },
+          { id: "suno", emoji: "☀️" },
+          { id: "nubo", emoji: "☁️" },
+        ],
+        correct: "pluvo",
+        reward: { word: "pluvo", emoji: "🌧️" },
+      },
+      {
+        instruction: "Trovu la venton!",
+        objects: [
+          { id: "vento", emoji: "💨" },
+          { id: "nubo", emoji: "☁️" },
+          { id: "pluvo", emoji: "🌧️" },
+        ],
+        correct: "vento",
+        reward: { word: "vento", emoji: "💨" },
+      },
+      {
+        instruction: "Trovu la nubon!",
+        objects: [
+          { id: "nubo", emoji: "☁️" },
+          { id: "vento", emoji: "💨" },
+          { id: "suno", emoji: "☀️" },
+        ],
+        correct: "nubo",
+        reward: { word: "nubo", emoji: "☁️" },
+      },
+      {
+        instruction: "Trovu la ĉielarkon!",
+        objects: [
+          { id: "cielarko", emoji: "🌈" },
+          { id: "nubo", emoji: "☁️" },
+          { id: "pluvo", emoji: "🌧️" },
+        ],
+        correct: "cielarko",
+        reward: { word: "ĉielarko", emoji: "🌈" },
+      },
+      {
+        instruction: "Tuŝu la feliĉan vizaĝon!",
+        objects: [
+          { id: "felica", emoji: "😊" },
+          { id: "trista", emoji: "😢" },
+          { id: "timigita", emoji: "😱" },
+        ],
+        correct: "felica",
+        reward: { word: "feliĉa", emoji: "😊" },
+      },
+      {
+        instruction: "Tuŝu la tristan vizaĝon!",
+        objects: [
+          { id: "timigita", emoji: "😱" },
+          { id: "felica", emoji: "😊" },
+          { id: "trista", emoji: "😢" },
+        ],
+        correct: "trista",
+        reward: { word: "trista", emoji: "😢" },
+      },
+      {
+        type: "drag",
+        instruction: "Donu la ĉielarkon al Kankro!",
+        objects: [
+          { id: "cielarko", emoji: "🌈" },
+          { id: "nubo", emoji: "☁️" },
+          { id: "vento", emoji: "💨" },
+        ],
+        correct: "cielarko",
+        reward: { word: "helpi", emoji: "🤝" },
+      },
+      {
+        type: "sequence",
+        instruction: "Unue tuŝu la sunon, poste la pluvon!",
+        objects: [
+          { id: "suno", emoji: "☀️" },
+          { id: "pluvo", emoji: "🌧️" },
+          { id: "vento", emoji: "💨" },
+        ],
+        sequence: ["suno", "pluvo"],
+        reward: { word: "vetero", emoji: "🌤️" },
+      },
+    ],
+  },
 };
 
 // Kolejność na mapie = kolejność odblokowywania (ukończ strefę,
 // by otworzyć następną).
-export const ZONE_ORDER = ["fruktejo", "vilago", "arbaro", "monto"];
+export const ZONE_ORDER = ["fruktejo", "vilago", "arbaro", "monto", "marbordo"];

@@ -119,7 +119,12 @@ function preprocessEsperantoForTTS(text) {
     .replace(/ps/g, "p-s")
     .replace(/Ps/g, "P-s")
     .replace(/mn/g, "m-n")
-    .replace(/Mn/g, "M-n");
+    .replace(/Mn/g, "M-n")
+    // W esperanto każda samogłoska jest osobną sylabą — nie ma dyftongów.
+    // Model bywa skłonny czytać "io"/"iu" na końcu słowa jak angielski
+    // sufiks ("papilio" → "papilyo"), więc wymuszamy rozdział myślnikiem
+    // (ta sama reguła co dla polskiego głosu fallbackowego w audio.js).
+    .replace(/i([aeou])/gi, "i-$1");
 }
 
 const ESPERANTO_ASCII = {

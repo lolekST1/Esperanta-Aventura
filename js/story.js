@@ -4,7 +4,7 @@
 // stuknięciu. Uruchamiane przy pierwszym wejściu; można powtórzyć z mapy (📜).
 
 import { STORY } from "./data/story.js";
-import { speak, playTap, playSuccess, NARRATOR } from "./audio.js";
+import { speak, playTap, playSuccess, NARRATOR, REWARD_VOICE } from "./audio.js";
 import { sceneArt, avatarArt, AVATAR_TYPES, AVATAR_COLORS } from "./art.js";
 
 const el = (id) => document.getElementById(id);
@@ -49,7 +49,7 @@ export function runIntro(game, onDone) {
         "pointerdown",
         () => {
           playTap();
-          speak(type.name);
+          speak(type.name, REWARD_VOICE);
           chosen = { type: type.id, color: type.defaultColor };
           showColorPick();
         },
@@ -74,7 +74,7 @@ export function runIntro(game, onDone) {
       dot.setAttribute("aria-label", color.id);
       dot.addEventListener("pointerdown", () => {
         playTap();
-        speak(color.id);
+        speak(color.id, REWARD_VOICE);
         chosen = { ...chosen, color: color.hex };
         el("story-scene").innerHTML = avatarArt(chosen);
         for (const d of colors.children) d.classList.remove("active");

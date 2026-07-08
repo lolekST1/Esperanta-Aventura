@@ -7,6 +7,7 @@
 
 import { speak, playSuccess, playRetry, playTap, wait, NARRATOR, REWARD_VOICE } from "./audio.js";
 import { ZONES } from "./data/zones.js";
+import { npcArt, avatarArt, migrateAvatar } from "./art.js";
 
 const SAVE_KEY = "esperanta-aventuro-save-v1";
 
@@ -48,7 +49,8 @@ function loadSave() {
   save.stars ??= 0;
   save.words ??= [];
   save.zones ??= {};
-  save.avatar ??= null;
+  // Stare zapisy trzymały awatar jako emoji — migrujemy do {type, color}.
+  save.avatar = migrateAvatar(save.avatar ?? null);
   save.mapPosition ??= null;
   save.storiesSeen ??= {};
   save.islandCelebrated ??= false;
@@ -147,7 +149,7 @@ export class Game {
     this.active = true;
     this.session++;
     this.reviewQueue = this.buildReviewQueue();
-    el("npc").textContent = zone.npc.emoji;
+    el("npc").innerHTML = npcArt(zone.npc.id);
     this.renderSkillSpot();
   }
 
@@ -543,7 +545,7 @@ export class Game {
 
   updateHud() {
     el("star-count").textContent = this.save.stars;
-    el("avatar-chip").textContent = this.save.avatar ?? "";
+    el("avatar-chip").innerHTML = this.save.avatar ? avatarArt(this.save.avatar) : "";
   }
 
   showReward(reward) {
@@ -668,7 +670,8 @@ export class Game {
     };
     persist(this.save);
 
-    el("win-npc").textContent = `${this.save.avatar ?? "🧒"} 🎉 ${this.zone.npc.emoji}`;
+    el("win-npc").innerHTML =
+      `${avatarArt(this.save.avatar)}<span class="win-party">🎉</span>${npcArt(this.zone.npc.id)}`;
     el("win-text").textContent = this.zone.winText;
     el("win-stars").textContent = "⭐".repeat(Math.min(this.sessionStars, 10));
     playSuccess();

@@ -3,8 +3,13 @@ import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
 import { ZONES, ZONE_ORDER } from "./data/zones.js";
+import { npcArt, avatarArt, starIcon } from "./art.js";
 
 const el = (id) => document.getElementById(id);
+
+// Statyczne ozdobniki interfejsu w stylu gry (zamiast emoji).
+el("start-npc").innerHTML = npcArt("vulpo");
+el("star-icon").innerHTML = starIcon(22);
 const SCREENS = ["start-screen", "story-screen", "map-screen", "game-screen", "win-screen", "island-win-screen"];
 
 const game = new Game();
@@ -41,8 +46,8 @@ function goToMap() {
 function showIslandCelebration() {
   game.markIslandCelebrated();
   const npcs = el("island-win-npcs");
-  npcs.innerHTML = `<span>${game.save.avatar ?? "🧒"}</span>` +
-    ZONE_ORDER.map((id) => `<span>${ZONES[id].npc.emoji}</span>`).join("");
+  npcs.innerHTML = `<span>${avatarArt(game.save.avatar)}</span>` +
+    ZONE_ORDER.map((id) => `<span>${npcArt(ZONES[id].npc.id)}</span>`).join("");
   el("island-win-stars").textContent = `⭐ ${game.save.stars}`;
   showScreen("island-win-screen");
   speak("Vi esploris la tutan Esperantion! Ĉiuj estas dankemaj al vi!");

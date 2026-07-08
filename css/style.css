@@ -544,6 +544,35 @@ h1, h2 {
 .object-button.wrong { animation: wobble 0.5s ease; }
 
 .obj-emoji { display: inline-block; }
+
+/* Ikony obiektów: SVG skaluje się przez font-size (1em = dawny rozmiar
+   emoji), więc mechanika granda/malgranda (obj.scale) działa bez zmian. */
+.obj-emoji svg,
+.obj-badge svg,
+.skill-spot svg,
+.skill-scene svg,
+#reward-emoji svg {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.1em;
+}
+
+.skill-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.06em;
+}
+
+.vortaro-item .emoji svg {
+  width: 44px;
+  height: 44px;
+  display: block;
+  margin: 0 auto 6px;
+}
+
+.falling-star svg { display: block; }
 .obj-emoji.anim-jump { animation: hop 1s ease-in-out infinite; }
 .obj-emoji.anim-fly { animation: floaty 1.8s ease-in-out infinite; }
 

@@ -8,6 +8,9 @@
 // Użycie:
 //   OPENAI_API_KEY=sk-... node tools/generate-tts.mjs
 //   node tools/generate-tts.mjs --dry-run   # lista fraz, bez wywołań API
+//   node tools/generate-tts.mjs --regen "ĵ|sciur|donaco"
+//     # wymuś PONOWNE nagranie fraz pasujących do regexa (np. po poprawie
+//     # reguł wymowy niżej stare pliki mają starą, złą wymowę)
 //
 // Bezpieczne do przerwania i ponownego uruchomienia — pomija kwestie, dla
 // których plik mp3 już istnieje na dysku i jest wpisany w manifeście.
@@ -20,6 +23,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { ZONES } from "../js/data/zones.js";
 import { STORY } from "../js/data/story.js";
 import { NARRATOR, REWARD_VOICE } from "../js/audio.js";
+import { AVATAR_TYPES, AVATAR_COLORS } from "../js/art.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const AUDIO_DIR = path.join(ROOT, "assets", "audio");
@@ -109,7 +113,13 @@ function preprocessEsperantoForTTS(text) {
     // model bywa skłonny czytać je jak angielskie "k" albo "s" (np.
     // "donaco" jak angielskie "donako").
     .replace(/C/g, "Ts")
-    .replace(/c/g, "ts");
+    .replace(/c/g, "ts")
+    // "ĵ" (dźwięk "ż"/ʒ) model czytał jak zwykłe "j" mimo instrukcji
+    // (usłyszane w praktyce: "manĝaĵojn" → "mandżajojn"). Zapis "zh" to
+    // standardowa angielska transkrypcja tego dźwięku ("measure") — model
+    // czyta ją poprawnie.
+    .replace(/Ĵ/g, "Zh")
+    .replace(/ĵ/g, "zh");
   for (const [word, safe] of Object.entries(COMPOUND_BREAKS)) {
     // Bez \b: \b w JS opiera się na \w (ASCII), więc nie rozpoznaje granicy
     // przed "ĉ" — zwykłe globalne podstawienie działa poprawnie i jest
@@ -205,11 +215,22 @@ function collectPhrases() {
 
   for (const line of NARRATOR_UI_LINES) add(line, "narrator", NARRATOR);
 
+  // Kreator postaci wypowiada nazwy typów i kolorów jak słówka-nagrody
+  // (wolno i wyraźnie) — patrz story.js.
+  for (const t of AVATAR_TYPES) add(t.name, "reward", REWARD_VOICE);
+  for (const c of AVATAR_COLORS) add(c.id, "reward", REWARD_VOICE);
+
   return [...phrases.values()];
 }
 
+// Hash liczony z tekstu PO preprocesingu: gdy poprawimy reguły wymowy,
+// fraza dostaje NOWĄ nazwę pliku — PWA nie może podetknąć starego,
+// źle wymówionego mp3 z cache (cache'owanie nagrań jest wieczne per URL).
 function hashFileName(role, text) {
-  const hash = createHash("sha256").update(`${role}:${text}`).digest("hex").slice(0, 12);
+  const hash = createHash("sha256")
+    .update(`${role}:${preprocessEsperantoForTTS(text)}`)
+    .digest("hex")
+    .slice(0, 12);
   return `${role}-${hash}.mp3`;
 }
 
@@ -258,6 +279,10 @@ async function generateOne(apiKey, text, role) {
 async function main() {
   const apiKey = process.env.OPENAI_API_KEY;
   const dryRun = process.argv.includes("--dry-run");
+  const regenIdx = process.argv.indexOf("--regen");
+  const regenRe = regenIdx > -1 && process.argv[regenIdx + 1]
+    ? new RegExp(process.argv[regenIdx + 1], "i")
+    : null;
   if (!apiKey && !dryRun) {
     console.error(
       "Brak OPENAI_API_KEY. Ustaw zmienną środowiskową albo uruchom z --dry-run,\n" +
@@ -292,7 +317,8 @@ async function main() {
     const filePath = path.join(AUDIO_DIR, fileName);
     const relPath = `assets/audio/${fileName}`;
 
-    if (manifest[key] && (await fileExists(path.join(ROOT, manifest[key])))) {
+    const forceRegen = regenRe?.test(text) ?? false;
+    if (!forceRegen && manifest[key] && (await fileExists(path.join(ROOT, manifest[key])))) {
       skipped++;
       continue;
     }

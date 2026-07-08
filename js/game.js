@@ -6,38 +6,29 @@
 // sekwencje async, gdy dziecko wyjdzie do mapy w połowie zadania.
 
 import { speak, playSuccess, playRetry, playTap, wait, NARRATOR, REWARD_VOICE } from "./audio.js";
-import { ZONES } from "./data/zones.js";
-import { npcArt, avatarArt, migrateAvatar } from "./art.js";
+import { npcArt, avatarArt, migrateAvatar, starIcon, sparkIcon } from "./art.js";
+import { objArt, objSceneArt } from "./objArt.js";
+
+// Ikona zamiast emoji tam, gdzie ją mamy; emoji jako bezpieczny fallback
+// (nowe strefy z nowymi emoji działają od razu, zanim powstanie grafika).
+function setGlyph(node, emoji) {
+  const art = objArt(emoji);
+  if (art) node.innerHTML = art;
+  else node.textContent = emoji;
+}
 
 const SAVE_KEY = "esperanta-aventuro-save-v1";
 
 const el = (id) => document.getElementById(id);
 
-const CONFETTI = ["⭐", "🎉", "✨", "🌟", "💛"];
+// Konfetti: malowane gwiazdki w dwóch rozmiarach zamiast emoji.
+const CONFETTI = [starIcon(34), sparkIcon(26), starIcon(24), sparkIcon(34), starIcon(28)];
 
 // Duszek ręki: ile dziecko ma czasu, zanim pokażemy demonstrację.
 const HINT_DELAY_MS = 4000;
 
 // Adaptacyjne powtórki: ile słówek maksymalnie dokłada się na koniec strefy.
 const MAX_REVIEW_TASKS = 2;
-
-// Mapa słowo → jego oryginalne zadanie, budowana raz z całego zestawu stref.
-// Pozwala niewidocznie "pożyczyć" dowolne zadanie (z dowolnej strefy) jako
-// powtórkę — silnik wciąż nie zna ŻADNYCH konkretnych słówek, tylko
-// generycznie indeksuje pole reward.word, które już i tak jest w danych.
-let _wordTaskIndex = null;
-function wordTaskIndex() {
-  if (_wordTaskIndex) return _wordTaskIndex;
-  _wordTaskIndex = new Map();
-  for (const zone of Object.values(ZONES)) {
-    for (const task of zone.tasks) {
-      if (task.reward?.word && !_wordTaskIndex.has(task.reward.word)) {
-        _wordTaskIndex.set(task.reward.word, task);
-      }
-    }
-  }
-  return _wordTaskIndex;
-}
 
 function loadSave() {
   let save;
@@ -106,16 +97,23 @@ export class Game {
 
   // Adaptacyjne powtórki: po wyczerpaniu zwykłych zadań strefy dokładamy do
   // MAX_REVIEW_TASKS zadań odpowiadających słówkom, w których dziecko
-  // ostatnio się myliło (gdziekolwiek w grze) — bez żadnego oznaczenia
-  // "to jest powtórka", więc dla dziecka wygląda jak zwykłe kolejne zadanie.
+  // ostatnio się myliło — bez żadnego oznaczenia "to jest powtórka".
+  //
+  // Powtórki pochodzą WYŁĄCZNIE z zadań bieżącej strefy: NPC pyta swoim
+  // głosem o swoje rzeczy (nagrania lektorskie zawsze istnieją, a instrukcje
+  // typu "Donu la panon al Urso!" nie padają w strefie Papago). Pomyłki
+  // z innych stref wracają do dziecka, gdy znów odwiedzi tamtą strefę.
   buildReviewQueue() {
     const entries = Object.entries(this.save.mistakes).filter(([, n]) => n > 0);
     if (!entries.length) return [];
     entries.sort((a, b) => b[1] - a[1]); // najpierw najczęściej mylone
-    const index = wordTaskIndex();
+    const own = new Map();
+    for (const task of this.zone?.tasks ?? []) {
+      if (task.reward?.word && !own.has(task.reward.word)) own.set(task.reward.word, task);
+    }
     const picked = [];
     for (const [word] of entries) {
-      const task = index.get(word);
+      const task = own.get(word);
       if (task) picked.push(task);
       if (picked.length >= MAX_REVIEW_TASKS) break;
     }
@@ -164,31 +162,39 @@ export class Game {
     return session !== this.session || !this.active;
   }
 
-  // Wejście do strefy: NPC wskakuje na scenę i wita się do końca, a przy
-  // pierwszej wizycie opowiada krótko, po co prosi o pomoc (zone.story) —
-  // przy kolejnych wejściach ta część jest pomijana.
+  // Wejście do strefy: NPC wskakuje na scenę. Powitanie ("Mi estas Vulpo!")
+  // i historyjka (zone.story) grają TYLKO przy pierwszej wizycie — przy
+  // kolejnych NPC od razu przechodzi do zadań (nikt nie przedstawia się
+  // znajomemu w kółko).
   async intro() {
     const s = this.session;
     const npc = el("npc");
     npc.className = "npc enter";
-    el("instruction").textContent = this.zone.npc.greeting;
     el("objects").innerHTML = "";
+
+    if (this.save.storiesSeen[this.zone.id]) {
+      el("instruction").textContent = "";
+      await wait(700); // chwila na animację wejścia NPC
+      if (this.stale(s)) return;
+      this.showTask();
+      return;
+    }
+
+    el("instruction").textContent = this.zone.npc.greeting;
     await speak(this.zone.npc.greeting, this.voice);
     if (this.stale(s)) return;
     await wait(500);
     if (this.stale(s)) return;
 
-    if (this.zone.story && !this.save.storiesSeen[this.zone.id]) {
-      for (const line of this.zone.story) {
-        el("instruction").textContent = line;
-        await speak(line, this.voice);
-        if (this.stale(s)) return;
-        await wait(600);
-        if (this.stale(s)) return;
-      }
-      this.save.storiesSeen[this.zone.id] = true;
-      persist(this.save);
+    for (const line of this.zone.story ?? []) {
+      el("instruction").textContent = line;
+      await speak(line, this.voice);
+      if (this.stale(s)) return;
+      await wait(600);
+      if (this.stale(s)) return;
     }
+    this.save.storiesSeen[this.zone.id] = true;
+    persist(this.save);
 
     this.showTask();
   }
@@ -214,14 +220,14 @@ export class Game {
 
       const emoji = document.createElement("span");
       emoji.className = "obj-emoji" + (obj.anim ? ` anim-${obj.anim}` : "");
-      emoji.textContent = obj.emoji;
+      setGlyph(emoji, obj.emoji);
       if (obj.scale) emoji.style.fontSize = `${obj.scale}em`;
       btn.appendChild(emoji);
 
       if (obj.badge) {
         const badge = document.createElement("span");
         badge.className = "obj-badge";
-        badge.textContent = obj.badge;
+        setGlyph(badge, obj.badge);
         btn.appendChild(badge);
       }
 
@@ -556,7 +562,7 @@ export class Game {
       this.renderVortaro();
       this.renderSkillSpot(); // nowe słówko mogło właśnie odblokować akcję
     }
-    el("reward-emoji").textContent = reward.emoji;
+    setGlyph(el("reward-emoji"), reward.emoji);
     el("reward-word").textContent = reward.word;
     el("reward-toast").classList.remove("hidden");
   }
@@ -576,7 +582,9 @@ export class Game {
     const unlocked = this.hasWord(sk.word);
     spot.classList.remove("hidden");
     spot.classList.toggle("locked", !unlocked);
-    spot.textContent = unlocked ? sk.emoji : "❓";
+    const art = unlocked ? objSceneArt(sk.emoji) : objArt("❓");
+    if (art) spot.innerHTML = art;
+    else spot.textContent = unlocked ? sk.emoji : "❓";
   }
 
   async onSkillTap() {
@@ -604,7 +612,8 @@ export class Game {
     // dzieje się samo, dopiero jego dotyk uruchamia przemianę.
     el("instruction").textContent = sk.line;
     el("npc").className = "npc happy";
-    el("objects").innerHTML = `<button id="skill-scene" class="skill-scene" aria-label="ago">${sk.before}</button>`;
+    el("objects").innerHTML =
+      `<button id="skill-scene" class="skill-scene" aria-label="ago">${objSceneArt(sk.before) ?? sk.before}</button>`;
     const scene = el("skill-scene");
     // Nasłuch podłączony NATYCHMIAST (nie po mowie) — dziecko może stuknąć
     // scenkę, zanim NPC skończy mówić, i to wciąż ma zadziałać.
@@ -617,7 +626,9 @@ export class Game {
 
     playTap();
     scene.classList.add("transform");
-    scene.textContent = sk.after;
+    const after = objSceneArt(sk.after);
+    if (after) scene.innerHTML = after;
+    else scene.textContent = sk.after;
     playSuccess();
     this.dropConfetti();
     el("npc").className = "npc dance";
@@ -653,7 +664,7 @@ export class Game {
     for (let i = 0; i < 12; i++) {
       const piece = document.createElement("div");
       piece.className = "falling-star";
-      piece.textContent = randomOf(CONFETTI);
+      piece.innerHTML = randomOf(CONFETTI);
       piece.style.left = `${5 + Math.random() * 90}vw`;
       piece.style.animationDelay = `${Math.random() * 0.6}s`;
       document.body.appendChild(piece);
@@ -699,7 +710,7 @@ export class Game {
     for (const w of this.save.words) {
       const item = document.createElement("button");
       item.className = "vortaro-item";
-      item.innerHTML = `<span class="emoji">${w.emoji}</span>${w.word}`;
+      item.innerHTML = `<span class="emoji">${objArt(w.emoji) ?? w.emoji}</span>${w.word}`;
       item.addEventListener("pointerdown", () => speak(w.word, REWARD_VOICE));
       grid.appendChild(item);
     }

@@ -515,7 +515,7 @@ export const ZONES = {
     id: "marbordo",
     name: "Marbordo",
     mapEmoji: "🏖️",
-    map: { x: 79, y: 62 },
+    map: { x: 84, y: 66 },
     npc: {
       id: "kankro",
       emoji: "🦀",

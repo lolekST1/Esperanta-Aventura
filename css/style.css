@@ -39,9 +39,29 @@ body {
 }
 
 .start-npc {
-  font-size: clamp(80px, 30vw, 160px);
+  width: clamp(120px, 38vw, 200px);
+  margin: 0 auto;
   animation: bounce 1.6s ease-in-out infinite;
 }
+
+.start-npc svg { width: 100%; height: auto; display: block; }
+
+/* Rząd "awatar 🎉 NPC" na ekranie wygranej strefy */
+.win-npc-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: clamp(36px, 10vw, 56px); /* rozmiar 🎉 między portretami */
+}
+
+.win-npc-row svg {
+  width: clamp(84px, 24vw, 130px);
+  height: auto;
+  animation: bounce 1.6s ease-in-out infinite;
+}
+
+.win-npc-row svg:last-child { animation-delay: 0.3s; }
 
 h1, h2 {
   color: #2c5e1a;
@@ -105,7 +125,13 @@ h1, h2 {
   font-size: clamp(40px, 14vw, 80px);
 }
 
-.island-win-npcs span { animation: bounce 1.6s ease-in-out infinite; }
+.island-win-npcs span { animation: bounce 1.6s ease-in-out infinite; display: inline-block; }
+
+.island-win-npcs span svg {
+  width: clamp(44px, 13vw, 76px);
+  height: auto;
+  display: block;
+}
 .island-win-npcs span:nth-child(2) { animation-delay: 0.2s; }
 .island-win-npcs span:nth-child(3) { animation-delay: 0.4s; }
 .island-win-npcs span:nth-child(4) { animation-delay: 0.6s; }
@@ -149,7 +175,18 @@ h1, h2 {
   padding: 8px 20px;
   color: #b8860b;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
+#avatar-chip svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+}
+
+#star-icon svg { display: block; }
 
 .icon-button {
   font-size: 30px;
@@ -175,9 +212,15 @@ h1, h2 {
 }
 
 .story-scene {
-  font-size: clamp(90px, 32vw, 170px);
+  width: clamp(160px, 48vw, 240px);
+  padding: 10px;
+  border-radius: 28px;
+  background: radial-gradient(120% 130% at 35% 25%, #fdf3df, #f0dcb0 65%, #dfc188);
+  box-shadow: 0 8px 22px #5a3d1e33;
   animation: floaty 2.4s ease-in-out infinite;
 }
+
+.story-scene svg { width: 100%; height: auto; display: block; }
 
 .story-text {
   font-size: clamp(22px, 6vw, 32px);
@@ -190,7 +233,7 @@ h1, h2 {
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   width: 100%;
 }
@@ -200,13 +243,41 @@ h1, h2 {
   border-radius: 24px;
   background: #ffffffd0;
   box-shadow: 0 5px 0 #00000018;
-  font-size: clamp(40px, 12vw, 64px);
+  padding: 8px;
   min-height: 84px;
   cursor: pointer;
   transition: transform 0.15s;
 }
 
+.avatar-option svg { width: 100%; height: auto; display: block; }
+
 .avatar-option:active { transform: scale(0.9); }
+
+/* Kropki wyboru koloru włosów/sierści — duże cele, aktywna z obwódką */
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.color-dot {
+  width: 58px;
+  height: 58px;
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 4px 0 #00000022;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.color-dot:active { transform: scale(0.88); }
+
+.color-dot.active {
+  border-color: #2c5e1a;
+  transform: scale(1.12);
+}
 
 /* ---------- Mapa wyspy ---------- */
 
@@ -233,6 +304,9 @@ h1, h2 {
   width: min(92vw, 480px);
   aspect-ratio: 1 / 1;
   margin: 0 auto;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px #5a3d1e33, 0 14px 34px #5a3d1e2e;
 }
 
 .map-svg {
@@ -241,14 +315,19 @@ h1, h2 {
   display: block;
 }
 
-.map-sand { fill: #f5e6b8; }
-.map-land { fill: #7ec850; }
+/* Droga: jaśniejszy "nasyp" pod spodem + kropkowany trakt na wierzchu */
+.map-road-bed {
+  stroke: #caa15c;
+  stroke-opacity: 0.55;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
 
 .map-road {
-  stroke: #fffdf0cc;
-  stroke-width: 1.6;
+  stroke: #f9ecc4;
+  stroke-width: 1.5;
   stroke-linecap: round;
-  stroke-dasharray: 0.2 4.2;
+  stroke-dasharray: 0.1 3.4;
 }
 
 .map-markers {
@@ -270,32 +349,26 @@ h1, h2 {
   min-width: 64px;
 }
 
-.map-marker-emoji {
+/* Znacznik strefy: portret NPC w pergaminowym kółku — kto tu mieszka;
+   samo miejsce (sad, zamek, góry...) jest namalowane na wyspie pod spodem. */
+.map-marker-face {
   position: relative;
-  font-size: clamp(30px, 9vw, 40px);
-  width: clamp(56px, 15vw, 68px);
-  height: clamp(56px, 15vw, 68px);
-  background: #ffffffd8;
+  width: clamp(52px, 14vw, 64px);
+  height: clamp(52px, 14vw, 64px);
+  background: #fff8e8e6;
+  border: 2px solid #e3cf9f;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
   box-shadow: 0 5px 0 #00000018;
 }
 
-.map-marker-npc {
-  position: absolute;
-  bottom: -6px;
-  right: -8px;
-  font-size: 0.55em;
-  background: #fff;
-  border-radius: 50%;
-  width: 1.5em;
-  height: 1.5em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 0 #00000022;
+.map-marker-face > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .map-marker-label {
@@ -312,16 +385,24 @@ h1, h2 {
   font-size: 12px;
   font-weight: bold;
   color: #b8860b;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 15px;
 }
 
-.map-marker.locked .map-marker-emoji {
+.map-marker-status svg { display: block; }
+
+.status-num { line-height: 1; }
+
+.map-marker.locked .map-marker-face {
   filter: grayscale(0.9);
   opacity: 0.65;
 }
 
 .map-marker.wobble { animation: wobble 0.5s ease; }
 
-.map-marker.new .map-marker-emoji { animation: invite-pulse 1.8s ease-in-out infinite; }
+.map-marker.new .map-marker-face { animation: invite-pulse 1.8s ease-in-out infinite; }
 
 /* Sekret (akcja-słowo) gotowy do odkrycia: gwiazdki skrzące się dookoła znacznika. */
 .marker-sparkles {
@@ -332,10 +413,11 @@ h1, h2 {
 
 .spark {
   position: absolute;
-  font-size: 15px;
   opacity: 0;
   animation: twinkle 1.6s ease-in-out infinite;
 }
+
+.spark svg { display: block; }
 
 .spark-1 { top: -8px; left: -10px; animation-delay: 0s; }
 .spark-2 { top: -10px; right: -8px; animation-delay: 0.4s; }
@@ -350,18 +432,19 @@ h1, h2 {
 .map-avatar {
   position: absolute;
   transform: translate(-50%, -82%);
-  transition: left 0.9s ease, top 0.9s ease;
   z-index: 3;
   pointer-events: none;
 }
 
-.map-avatar #map-avatar-emoji {
-  display: inline-block;
-  font-size: clamp(34px, 10vw, 46px);
+.map-avatar #map-avatar-art {
+  display: block;
+  width: clamp(40px, 11vw, 52px);
   filter: drop-shadow(0 3px 2px #00000055);
 }
 
-.map-avatar.walking #map-avatar-emoji { animation: avatar-bob 0.3s ease-in-out infinite; }
+.map-avatar #map-avatar-art svg { width: 100%; height: auto; display: block; }
+
+.map-avatar.walking #map-avatar-art { animation: avatar-bob 0.3s ease-in-out infinite; }
 
 /* ---------- Scena ---------- */
 
@@ -384,10 +467,12 @@ h1, h2 {
 }
 
 .npc {
-  font-size: clamp(64px, 20vw, 120px);
+  width: clamp(88px, 24vw, 140px);
   flex-shrink: 0;
   transition: transform 0.3s;
 }
+
+.npc svg { width: 100%; height: auto; display: block; }
 
 .npc.happy { animation: bounce 0.5s ease-in-out 3; }
 .npc.dance { animation: dance 0.55s ease-in-out infinite; }

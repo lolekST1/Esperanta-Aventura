@@ -93,20 +93,30 @@ function preprocessEsperantoForTTS(text) {
   for (const [word, safe] of Object.entries(LOOKALIKE_WORDS)) {
     out = out.replace(new RegExp(`\\b${word}\\b`, "g"), safe);
   }
+  // Poprawki per-słowo (usłyszane w praktyce na gotowych nagraniach):
   out = out
-    .replace(/SC/g, "S-TS")
-    .replace(/Sc/g, "S-ts")
-    .replace(/sc/g, "s-ts")
-    .replace(/kn/g, "k-n")
-    .replace(/Kn/g, "K-n")
-    .replace(/gn/g, "g-n")
-    .replace(/Gn/g, "G-n")
-    .replace(/pn/g, "p-n")
-    .replace(/Pn/g, "P-n")
-    .replace(/ps/g, "p-s")
-    .replace(/Ps/g, "P-s")
-    .replace(/mn/g, "m-n")
-    .replace(/Mn/g, "M-n")
+    // "saĝa" czytane "saga" (ĝ gubione) — "dj" niesie dźwięk [dż]
+    // w wielu ortografiach (Djibouti), model czyta je poprawnie.
+    .replace(/saĝ/g, "sadj")
+    .replace(/Saĝ/g, "Sadj")
+    // "ŝlosilo" czytane "ŝloŝilo" (asymilacja s→ŝ) — rozdzielenie członów
+    // izoluje czyste [s].
+    .replace(/ŝlosil/g, "ŝlo-sil")
+    .replace(/Ŝlosil/g, "Ŝlo-sil")
+    // "Bonege" czytane z miękkim g ("bonedże") — "ghe" jak we włoskim
+    // "spaghetti" wymusza twarde [g] przed e.
+    .replace(/Bonege/g, "Boneghe")
+    .replace(/bonege/g, "boneghe");
+  out = out
+    // "sc" = [s]+[ts]. Zapis z myślnikiem po pojedynczej spółgłosce
+    // ("s-tsiuro") model czytał jak NAZWĘ LITERY ("es-ciuro") — apostrof
+    // nie wywołuje tego efektu, a wciąż rozdziela zbitkę.
+    .replace(/SC/g, "S'TS")
+    .replace(/Sc/g, "S'ts")
+    .replace(/sc/g, "s'ts")
+    // UWAGA: reguły typu kn→k-n USUNIĘTE — "k-nabo" model czytał jako
+    // "kej-nabo" (nazwa litery K). Zbitki kn/gn/pn zostają w naturalnym
+    // zapisie; wymowę pilnują instrukcje niżej.
     // W esperanto każda samogłoska jest osobną sylabą — nie ma dyftongów.
     .replace(/i([aeou])/gi, "i-$1")
     // Osobne "c" (poza "sc", już rozbite wyżej) = zawsze "ts" — bez tego
@@ -140,19 +150,28 @@ General rules:
 * Never apply English, Polish, Italian, Spanish, French or other language pronunciation rules.
 * Read naturally but articulate clearly, as if teaching beginners.
 
+Vowels:
+* a, e, i, o, u are always pure, short monophthongs (as in Spanish or Italian).
+* NEVER diphthongize vowels, especially word-final "-o": "strigo" ends in a
+  clean [o] like Spanish "como", never an English-style "oh-w" glide [oʊ].
+
 Consonants:
 * c = "ts" (as in "cats")
 * ĉ = "ch" (as in "church")
 * ĝ = "j" (as in "judge")
+* g = ALWAYS hard [g] as in "go", also before e and i ("bonege" = bo-ne-GE)
 * ĥ = voiceless velar fricative (similar to the "ch" in German "Bach")
 * ĵ = "s" in "measure"
+* r = tapped or rolled [r] (as in Spanish, Italian or Polish), NEVER the
+  English approximant [ɹ] — "tre", "Hura", "perfekte" all use a rolled r
 * ŝ = "sh"
 * j = consonantal "y"
 * ŭ = "w"-like glide, only in diphthongs (aŭ, eŭ)
 
 Important consonant clusters:
 * Pronounce every consonant separately. Never merge or soften consonant clusters.
-* The sequence "sc" is ALWAYS pronounced as "s" followed by "c" ("sts"), never as "sh", "sj", "sch" or any similar sound.
+* The sequence "s'ts" (from "sc") is "s" followed immediately by "ts", never "sh", "sj", "sch", and NEVER the letter name "ess".
+* Word-initial clusters like "kn-", "gn-" are pronounced as one smooth cluster with BOTH sounds audible: "knabo" = [knabo] in one flow, NEVER "kay-nabo" or "k-nabo" with the letter name.
 
 Reading style:
 * Speak slowly and articulate each consonant clearly.

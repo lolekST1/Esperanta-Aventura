@@ -41,20 +41,21 @@ export function runIntro(game, onDone) {
     speak("Kiu vi estas? Elektu!");
     grid.innerHTML = "";
     grid.classList.remove("hidden");
+    let picked = false; // pierwsze stuknięcie wygrywa — bez podwójnego wyboru
     for (const type of AVATAR_TYPES) {
       const btn = document.createElement("button");
       btn.className = "avatar-option";
       btn.innerHTML = avatarArt({ type: type.id, color: type.defaultColor });
-      btn.addEventListener(
-        "pointerdown",
-        () => {
-          playTap();
-          speak(type.name, REWARD_VOICE);
-          chosen = { type: type.id, color: type.defaultColor };
-          showColorPick();
-        },
-        { once: true },
-      );
+      btn.addEventListener("pointerdown", async () => {
+        if (picked) return;
+        picked = true;
+        playTap();
+        chosen = { type: type.id, color: type.defaultColor };
+        // Nazwa postaci musi wybrzmieć DO KOŃCA, zanim odezwie się
+        // "Elektu la koloron!" — kolejne speak() ucinałoby ją w pół słowa.
+        await speak(type.name, REWARD_VOICE);
+        showColorPick();
+      });
       grid.appendChild(btn);
     }
   }

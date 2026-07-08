@@ -239,30 +239,48 @@ function playRecording(src, text, profile) {
   currentAudio?.pause();
   pendingRecordingFinish?.(); // poprzednie odtwarzanie przerwane — rozwiąż jego obietnicę
   return new Promise((resolve) => {
-    const audio = new Audio(src);
-    currentAudio = audio;
     let settled = false;
+    let retried = false;
     const finish = () => {
       if (settled) return;
       settled = true;
       pendingRecordingFinish = null;
       resolve();
     };
-    const fallback = () => {
+    const giveUp = () => {
       if (settled) return;
       settled = true;
       pendingRecordingFinish = null;
       speakSynthesized(text, profile).then(resolve);
     };
+    // Pojedyncza czkawka sieci/dekodera nie powinna od razu przełączać na
+    // gorszą syntezę — próbujemy jeszcze raz świeżym elementem, dopiero
+    // drugi błąd oddaje głos Web Speech.
+    const onFail = () => {
+      if (settled) return;
+      if (!retried) {
+        retried = true;
+        setTimeout(() => {
+          if (!settled) start();
+        }, 350);
+        return;
+      }
+      giveUp();
+    };
+    const start = () => {
+      const audio = new Audio(src);
+      currentAudio = audio;
+      audio.addEventListener("ended", finish);
+      audio.addEventListener("error", onFail);
+      audio.play().catch(onFail);
+    };
     // Wywoływane przez stopSpeech() (np. wyjście do mapy w trakcie mowy) —
     // audio.pause() sam z siebie NIE odpala "ended" ani "error", więc bez
     // tego ta obietnica wisiałaby (i cała sekwencja await speak() w game.js)
     // zawieszona do końca sesji. To NIE jest błąd, więc rozwiązujemy finish(),
-    // nie fallback().
+    // nie giveUp().
     pendingRecordingFinish = finish;
-    audio.addEventListener("ended", finish);
-    audio.addEventListener("error", fallback);
-    audio.play().catch(fallback);
+    start();
   });
 }
 
@@ -325,7 +343,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v27-ikonoj-kaj-audio";
+export const GAME_VERSION = "v28-prononco";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

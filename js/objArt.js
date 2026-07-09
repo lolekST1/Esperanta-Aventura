@@ -31,12 +31,11 @@ const OBJ = {
     <ellipse cx="64" cy="20" rx="10" ry="5.5" transform="rotate(-24 64 20)" fill="#58a86a"/>
     <ellipse cx="37" cy="47" rx="9" ry="12" fill="#fff" opacity="0.28"/>`)),
   "🍌": I(W(`
-    <path d="M19,24 C17,56 40,80 74,70 C80,70 83,77 78,80 C38,94 6,62 10,27 C10,20 18,18 19,24 Z"
-          fill="#f2c94c" stroke="#c9992e" stroke-width="3" stroke-opacity="0.55"/>
-    <path d="M12,22 Q10,16 16,14 Q22,14 20,22 Q16,26 12,22 Z" fill="#8a5a34"/>
-    <path d="M74,70 Q80,68 82,74 Q82,80 76,80 Q72,76 74,70 Z" fill="#8a5a34"/>
-    <path d="M26,40 Q38,66 60,72" fill="none" stroke="#c9992e" stroke-width="2.5" opacity="0.5"/>
-    <path d="M23,32 Q33,58 54,66" fill="none" stroke="#fff" stroke-width="3.5" opacity="0.35" stroke-linecap="round"/>`)),
+    <path d="M18,22 A44,44 0 0 0 78,74 A70,70 0 0 1 18,22 Z"
+          fill="#f2c94c" stroke="#c9992e" stroke-width="3" stroke-opacity="0.55" stroke-linejoin="round"/>
+    <path d="M14,18 Q11,12 17,10 Q23,10 21,18 Q18,23 14,18 Z" fill="#8a5a34"/>
+    <path d="M76,70 Q82,68 84,74 Q84,80 77,80 Q73,75 76,70 Z" fill="#8a5a34"/>
+    <path d="M24,36 Q29,58 48,70" fill="none" stroke="#fff" stroke-width="3.5" opacity="0.35" stroke-linecap="round"/>`)),
   "🍐": I(W(`
     <path d="M50,18 C55,18 57,25 55,33 C69,38 76,52 74,65 C72,82 60,91 50,89 C40,91 28,82 26,65 C24,52 31,38 45,33 C43,25 45,18 50,18 Z"
           fill="#c3cc5a" stroke="#93a03a" stroke-width="3" stroke-opacity="0.5"/>

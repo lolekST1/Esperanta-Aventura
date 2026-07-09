@@ -1,5 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="22" fill="#7ec850"/>
-  <text x="50" y="62" font-size="52" text-anchor="middle">🦊</text>
-  <text x="50" y="92" font-size="14" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="bold">EO</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <!-- Ikona aplikacji: akwarelowy Vulpo ze stylu "Fabela Insulo".
+       Samowystarczalna (własne gradienty) — ikona nie może sięgać
+       do defs w index.html. -->
+  <defs>
+    <linearGradient id="ico-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#aee7ff"/><stop offset="60%" stop-color="#d9f7c9"/><stop offset="100%" stop-color="#9ed470"/>
+    </linearGradient>
+    <linearGradient id="ico-fur" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#f79a4e"/><stop offset="100%" stop-color="#dd5f1d"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="52" fill="url(#ico-sky)"/>
+  <g transform="translate(0,14)">
+    <path d="M58,86 Q58,32 74,12 Q100,38 96,78 Q78,92 58,86 Z"
+          fill="url(#ico-fur)" stroke="#b5551f" stroke-width="2" stroke-opacity="0.55"/>
+    <path d="M68,78 Q68,44 77,26 Q90,46 88,72 Q78,82 68,78 Z" fill="#f2b27e"/>
+    <path d="M184,86 Q184,32 168,12 Q142,38 146,78 Q164,92 184,86 Z"
+          fill="url(#ico-fur)" stroke="#b5551f" stroke-width="2" stroke-opacity="0.55"/>
+    <path d="M174,78 Q174,44 165,26 Q152,46 154,72 Q164,82 174,78 Z" fill="#f2b27e"/>
+    <ellipse cx="122" cy="120" rx="70" ry="79" transform="rotate(-4 122 120)"
+             fill="url(#ico-fur)" stroke="#b5551f" stroke-width="2" stroke-opacity="0.55"/>
+    <path d="M54,128 Q36,148 56,168 Q74,178 88,164 Q80,142 54,128 Z" fill="#fbf0dd" stroke="#dcc9a0" stroke-width="1.2"/>
+    <path d="M190,126 Q208,146 188,166 Q170,176 156,162 Q164,140 190,126 Z" fill="#fbf0dd" stroke="#dcc9a0" stroke-width="1.2"/>
+    <path d="M84,142 Q82,178 120,187 Q160,180 158,144 Q140,124 120,127 Q101,124 84,142 Z"
+          fill="#fbf0dd" stroke="#dcc9a0" stroke-width="1.4"/>
+    <ellipse cx="74" cy="134" rx="11" ry="7" fill="#e79a91" opacity="0.75"/>
+    <ellipse cx="168" cy="132" rx="11" ry="7" fill="#e79a91" opacity="0.75"/>
+    <ellipse cx="121" cy="137" rx="7.5" ry="6" fill="#6b3a24"/>
+    <ellipse cx="92" cy="115" rx="12" ry="15.5" transform="rotate(-8 92 115)" fill="#fff"/>
+    <ellipse cx="152" cy="113" rx="13" ry="16.5" transform="rotate(6 152 113)" fill="#fff"/>
+    <circle cx="93" cy="118" r="6" fill="#4a2f1f"/>
+    <circle cx="153" cy="116" r="6.2" fill="#4a2f1f"/>
+    <circle cx="95.5" cy="115" r="1.9" fill="#fff"/>
+    <circle cx="155.5" cy="113" r="1.9" fill="#fff"/>
+    <path d="M101,158 Q120,168 142,156" fill="none" stroke="#4a2f1f" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
 </svg>

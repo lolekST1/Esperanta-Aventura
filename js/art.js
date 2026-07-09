@@ -536,6 +536,182 @@ export function sceneArt(scene, avatar) {
   }
 }
 
+// Balon z awatarem w koszu — scena przylotu na mapę (bez chmur,
+// bo leci NAD prawdziwą mapą). Kosz rysowany PO awatarze (zasłania tułów).
+export function balloonWithAvatar(avatar) {
+  const a = migrateAvatar(avatar) ?? { type: "knabo", color: "#7a4a2b" };
+  return SVG(
+    `<g filter="url(#a-wob)">
+      <path d="M120,14 Q198,20 194,92 Q190,138 148,166 L148,180 L92,180 L92,166 Q50,138 46,92 Q42,20 120,14 Z"
+            fill="url(#g-balloon)" stroke="#a83a2a" stroke-width="2" stroke-opacity="0.6"/>
+      <path d="M96,20 Q74,70 96,162 Q104,172 110,176 Q92,110 104,18 Z" fill="#fbf0dd" opacity="0.9"/>
+      <path d="M144,20 Q166,70 144,162 Q136,172 130,176 Q148,110 136,18 Z" fill="#f2b23d" opacity="0.9"/>
+      <path d="M92,166 L98,206 M148,166 L142,206" stroke="#8a6136" stroke-width="2.4"/>
+    </g>
+    <g transform="translate(77,132) scale(0.36)">${avatarBody(a)}</g>
+    <g filter="url(#a-wob)">
+      <rect x="92" y="202" width="56" height="32" rx="8" fill="url(#g-basket)" stroke="#7a5730" stroke-width="2"/>
+      <path d="M92,212 L148,212 M92,222 L148,222 M106,202 L106,234 M120,202 L120,234 M134,202 L134,234"
+            stroke="#7a5730" stroke-width="1.6" opacity="0.6"/>
+    </g>`,
+    `--hair:${a.color}`
+  );
+}
+
+// ---------- Tła scen w strefach ----------
+// Delikatne, malowane tło za sceną zadań: dziecko "wchodzi" do miejsca,
+// które widziało na mapie. Kolory celowo wyblakłe — obiekty zadań i dymek
+// NPC muszą pozostać najbardziej kontrastowym elementem ekranu.
+
+// Tła są projektowane PIONOWO (viewBox 0 0 100 200, "xMidYMax slice"):
+// niebo wysoko, pas ziemi i pejzaż przy dolnej krawędzi — na telefonie
+// kadr obcina boki, na tablecie górę nieba, a dolna linia zawsze zostaje.
+function backdropSVG(id, sky1, sky2, ground, inner) {
+  return `<svg viewBox="0 0 100 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="bg-sky-${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${sky1}"/><stop offset="100%" stop-color="${sky2}"/>
+      </linearGradient>
+    </defs>
+    <rect width="100" height="200" fill="url(#bg-sky-${id})"/>
+    ${inner}
+    <path d="M0,164 Q18,160 36,163 Q58,167 78,162 Q90,160 100,163 L100,200 L0,200 Z"
+          fill="${ground}" filter="url(#o-wob)"/>
+    <rect width="100" height="200" filter="url(#u-grain)" style="mix-blend-mode:multiply"/>
+  </svg>`;
+}
+
+const BACKDROPS = {
+  fruktejo: () => backdropSVG("fruktejo", "#dff0fa", "#eef7e0", "#b7d489", `
+    <circle cx="16" cy="18" r="8" fill="#f6d76a" opacity="0.6" filter="url(#o-wob)"/>
+    <g filter="url(#o-wob)">
+      <use href="#m-fruit-tree" transform="translate(13,158) scale(3)"/>
+      <use href="#m-fruit-tree" transform="translate(89,161) scale(2.2)"/>
+    </g>`),
+  vilago: () => backdropSVG("vilago", "#e3f2fb", "#f4ecd8", "#c2cf8a", `
+    <g fill="#ffffff" opacity="0.65" filter="url(#o-wob)">
+      <ellipse cx="24" cy="18" rx="10" ry="3.4"/><ellipse cx="32" cy="15.5" rx="6" ry="2.8"/>
+    </g>
+    <g filter="url(#o-wob)">
+      <use href="#m-house" transform="translate(12,158) scale(2.8)"/>
+      <use href="#m-house" transform="translate(89,161) scale(2.1)"/>
+      <use href="#m-tree" transform="translate(24,166) scale(1.7)"/>
+    </g>`),
+  arbaro: () => backdropSVG("arbaro", "#d5e9d0", "#e9f2d6", "#9cc27e", `
+    <g filter="url(#o-wob)">
+      <use href="#m-tree" transform="translate(9,152) scale(3.8)"/>
+      <use href="#m-tree" transform="translate(20,164) scale(2.3)"/>
+      <use href="#m-tree" transform="translate(91,155) scale(3.2)"/>
+      <use href="#m-tree" transform="translate(82,166) scale(2)"/>
+    </g>`),
+  monto: () => backdropSVG("monto", "#d8ddf0", "#f2ead8", "#c3cdaa", `
+    <g filter="url(#o-wob)" opacity="0.7">
+      <path d="M-4,166 Q6,130 15,126 Q22,122 27,140 Q31,152 29,166 Z" fill="#a99bc0"/>
+      <path d="M9,135 Q13,125 16,125 Q20,124 23,134 Q16,129 9,135 Z" fill="#f6efe2"/>
+      <path d="M72,166 Q80,132 89,128 Q96,124 100,140 L100,166 Z" fill="#9a8db2"/>
+      <path d="M83,137 Q87,127 90,127 Q94,126 97,136 Q90,131 83,137 Z" fill="#f6efe2"/>
+    </g>
+    <g fill="#e0a63c" opacity="0.8">
+      <path d="M22,20 l1.4,3.4 3.4,1.4 -3.4,1.4 -1.4,3.4 -1.4,-3.4 -3.4,-1.4 3.4,-1.4 Z"/>
+      <path d="M80,12 l1.1,2.6 2.6,1.1 -2.6,1.1 -1.1,2.6 -1.1,-2.6 -2.6,-1.1 2.6,-1.1 Z"/>
+      <path d="M64,34 l0.9,2.2 2.2,0.9 -2.2,0.9 -0.9,2.2 -0.9,-2.2 -2.2,-0.9 2.2,-0.9 Z"/>
+    </g>`),
+  marbordo: () => backdropSVG("marbordo", "#d8f0f6", "#f6ecd0", "#eeda9e", `
+    <path d="M0,152 Q25,148 50,151 Q75,154 100,150 L100,170 Q60,174 30,171 Q12,170 0,172 Z"
+          fill="#8ed0cd" opacity="0.85" filter="url(#o-wob)"/>
+    <g fill="none" stroke="#dff0ee" stroke-width="1" stroke-linecap="round" opacity="0.7" filter="url(#o-wob)">
+      <path d="M16,156 q2.5,-2 5,0 q2.5,2 5,0"/>
+      <path d="M70,154 q2.5,-2 5,0 q2.5,2 5,0"/>
+    </g>
+    <g filter="url(#o-wob)">
+      <path d="M86,172 L88,146" stroke="#8a6136" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M74,148 Q88,134 100,144 Q94,146 92,148 Q88,145 84,149 Q80,146 74,148 Z"
+            fill="#e0648a" stroke="#b23f68" stroke-width="0.8"/>
+      <circle cx="14" cy="180" r="1.6" fill="#fdf6e8" stroke="#d9b98a" stroke-width="0.5"/>
+    </g>`),
+  kastelo: () => backdropSVG("kastelo", "#e6e9f5", "#f2e6d4", "#b9c99a", `
+    <g filter="url(#o-wob)" opacity="0.8">
+      <rect x="7" y="142" width="7" height="24" rx="1.4" fill="#d9cdb2" stroke="#b39a6e" stroke-width="0.7"/>
+      <rect x="23" y="142" width="7" height="24" rx="1.4" fill="#d9cdb2" stroke="#b39a6e" stroke-width="0.7"/>
+      <rect x="13" y="149" width="11" height="17" fill="#cfc1a0" stroke="#b39a6e" stroke-width="0.7"/>
+      <path d="M5.5,143 L10.5,133 L15.5,143 Z" fill="#b5573e" stroke="#8c4028" stroke-width="0.6"/>
+      <path d="M21.5,143 L26.5,133 L31.5,143 Z" fill="#b5573e" stroke="#8c4028" stroke-width="0.6"/>
+      <line x1="10.5" y1="133" x2="10.5" y2="128.5" stroke="#6b4226" stroke-width="0.8"/>
+      <path d="M10.5,128.5 L15,130 L10.5,131.5 Z" fill="#e8722e"/>
+    </g>
+    <g fill="#ffffff" opacity="0.6" filter="url(#o-wob)">
+      <ellipse cx="78" cy="18" rx="9" ry="3"/><ellipse cx="85" cy="15.5" rx="5.5" ry="2.4"/>
+    </g>`),
+};
+
+export function zoneBackdrop(zoneId) {
+  const build = BACKDROPS[zoneId];
+  return build ? build() : "";
+}
+
+// ---------- Ikony interfejsu (przyciski, nagłówki) ----------
+// Małe, ostre (bez filtra akwarelowego — w 24–30 px drżenie zlewa się
+// w rozmycie), ale w palecie i duchu reszty grafiki.
+
+const UI_ICONS = {
+  island: { vb: "0 0 24 24", body: `
+    <path d="M2.5,17.5 Q12,13.5 21.5,17.5 Q21,20.5 12,20.5 Q3,20.5 2.5,17.5 Z" fill="#ecd28f" stroke="#c9a15c" stroke-width="1.2"/>
+    <path d="M14.5,16 Q15.5,11 13.5,7" fill="none" stroke="#8a5a34" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M13.5,7 Q9.5,5.5 7.5,8 Q11,8.5 13.5,7 Z" fill="#58a86a"/>
+    <path d="M13.5,7 Q17.5,5 19.5,7.5 Q16,8.5 13.5,7 Z" fill="#6cb87b"/>
+    <path d="M13.5,7 Q13,3.5 16,2.5 Q16.5,5.5 13.5,7 Z" fill="#58a86a"/>
+    <path d="M2,22 q1.5,-1 3,0 q1.5,1 3,0 M16,22 q1.5,-1 3,0 q1.5,1 3,0" fill="none" stroke="#7fc4c9" stroke-width="1.3" stroke-linecap="round"/>` },
+  book: { vb: "0 0 24 24", body: `
+    <path d="M12,5 Q7,2.5 2.5,4 L2.5,18 Q7,16.5 12,19 Q17,16.5 21.5,18 L21.5,4 Q17,2.5 12,5 Z"
+          fill="#fdf6e8" stroke="#c9a86e" stroke-width="1.3"/>
+    <path d="M12,5 L12,19" stroke="#c9a86e" stroke-width="1.2"/>
+    <path d="M5,8 Q8.5,7 10,8 M5,11.5 Q8.5,10.5 10,11.5 M14,8 Q17.5,7 19,8 M14,11.5 Q17.5,10.5 19,11.5"
+          fill="none" stroke="#c9a86e" stroke-width="1" opacity="0.8"/>` },
+  scroll: { vb: "0 0 24 24", body: `
+    <rect x="5" y="4" width="14" height="16" rx="2" fill="#f6e7c8" stroke="#c9a86e" stroke-width="1.3"/>
+    <ellipse cx="12" cy="4.4" rx="7" ry="2.1" fill="#e8d3a8" stroke="#c9a86e" stroke-width="1.1"/>
+    <ellipse cx="12" cy="19.6" rx="7" ry="2.1" fill="#e8d3a8" stroke="#c9a86e" stroke-width="1.1"/>
+    <path d="M8,9.5 L16,9.5 M8,13 L16,13 M8,16.5 L13,16.5" stroke="#a98a58" stroke-width="1.2" stroke-linecap="round"/>` },
+  gear: { vb: "0 0 24 24", body: `
+    <g fill="#8b93b8">
+      <rect x="10.6" y="1.5" width="2.8" height="21" rx="1.2"/>
+      <rect x="10.6" y="1.5" width="2.8" height="21" rx="1.2" transform="rotate(45 12 12)"/>
+      <rect x="10.6" y="1.5" width="2.8" height="21" rx="1.2" transform="rotate(90 12 12)"/>
+      <rect x="10.6" y="1.5" width="2.8" height="21" rx="1.2" transform="rotate(135 12 12)"/>
+    </g>
+    <circle cx="12" cy="12" r="6.5" fill="#8b93b8" stroke="#5a628c" stroke-width="1.4"/>
+    <circle cx="12" cy="12" r="2.6" fill="#fdf6e8" stroke="#5a628c" stroke-width="1.2"/>` },
+  speaker: { vb: "0 0 24 24", body: `
+    <path d="M3,9.5 L7,9.5 L12,4.5 L12,19.5 L7,14.5 L3,14.5 Z"
+          fill="#e0a63c" stroke="#b57a18" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M15,9 Q17,12 15,15 M17.5,6.5 Q21,12 17.5,17.5" fill="none" stroke="#b57a18" stroke-width="1.6" stroke-linecap="round"/>` },
+  replay: { vb: "0 0 24 24", body: `
+    <path d="M12,4 A8,8 0 1 0 20,12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M12,0.8 L17.5,4 L12,7.2 Z" fill="#fff"/>` },
+  play: { vb: "0 0 24 24", body: `
+    <path d="M7,4.5 L19.5,12 L7,19.5 Z" fill="#fff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>` },
+  party: { vb: "0 0 24 24", body: `
+    <path d="M3.5,20.5 L8,9.5 L14.5,16 Z" fill="#e0a63c" stroke="#b57a18" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M5.5,15 L10,19.5 M7,12 L12.5,17.5" stroke="#c9992e" stroke-width="1" opacity="0.7"/>
+    <circle cx="16" cy="6" r="1.4" fill="#e04b3b"/>
+    <circle cx="20.5" cy="10" r="1.2" fill="#4fa7d8"/>
+    <circle cx="12" cy="3.5" r="1.1" fill="#58a86a"/>
+    <path d="M17.5,13.5 q1.5,-1 1,-2.5 M12.5,8.5 q0.5,-2 -1,-3 M20,3.5 q-1.5,0.5 -2.5,-0.5"
+          fill="none" stroke="#e0648a" stroke-width="1.2" stroke-linecap="round"/>` },
+  hand: { vb: "0 0 100 100", body: `
+    <g filter="url(#o-wob)">
+      <path d="M40,10 Q40,4 47,4 Q54,4 54,12 L54,42 Q62,38 72,42 Q84,47 80,60 Q74,84 52,86 Q30,86 26,64 L24,52 Q23,42 32,44 L40,46 Z"
+            fill="#f0c398" stroke="#cfa06b" stroke-width="3"/>
+      <path d="M54,46 Q60,44 66,47 M56,56 Q64,54 70,57" stroke="#cfa06b" stroke-width="2" fill="none" opacity="0.7"/>
+    </g>` },
+};
+
+export function uiIcon(name, size = 24) {
+  const ic = UI_ICONS[name];
+  if (!ic) return "";
+  return `<svg viewBox="${ic.vb}" width="${size}" height="${size}" aria-hidden="true">${ic.body}</svg>`;
+}
+
 // ---------- Ikonki statusu (mapa) ----------
 
 const STAR_D = "M0,-10 L2.5,-3.4 L9.5,-3.1 L4,1.3 L5.9,8.1 L0,4.2 L-5.9,8.1 L-4,1.3 L-9.5,-3.1 L-2.5,-3.4 Z";

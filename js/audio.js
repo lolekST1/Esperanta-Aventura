@@ -343,7 +343,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v28-prononco";
+export const GAME_VERSION = "v29-fasado";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

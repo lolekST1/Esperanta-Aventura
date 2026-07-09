@@ -6,7 +6,7 @@
 // sekwencje async, gdy dziecko wyjdzie do mapy w połowie zadania.
 
 import { speak, playSuccess, playRetry, playTap, wait, NARRATOR, REWARD_VOICE } from "./audio.js";
-import { npcArt, avatarArt, migrateAvatar, starIcon, sparkIcon } from "./art.js";
+import { npcArt, avatarArt, migrateAvatar, starIcon, sparkIcon, uiIcon, zoneBackdrop } from "./art.js";
 import { objArt, objSceneArt } from "./objArt.js";
 
 // Ikona zamiast emoji tam, gdzie ją mamy; emoji jako bezpieczny fallback
@@ -148,6 +148,7 @@ export class Game {
     this.session++;
     this.reviewQueue = this.buildReviewQueue();
     el("npc").innerHTML = npcArt(zone.npc.id);
+    el("zone-bg").innerHTML = zoneBackdrop(zone.id);
     this.renderSkillSpot();
   }
 
@@ -682,9 +683,9 @@ export class Game {
     persist(this.save);
 
     el("win-npc").innerHTML =
-      `${avatarArt(this.save.avatar)}<span class="win-party">🎉</span>${npcArt(this.zone.npc.id)}`;
+      `${avatarArt(this.save.avatar)}<span class="win-party">${uiIcon("party", 44)}</span>${npcArt(this.zone.npc.id)}`;
     el("win-text").textContent = this.zone.winText;
-    el("win-stars").textContent = "⭐".repeat(Math.min(this.sessionStars, 10));
+    el("win-stars").innerHTML = starIcon(30).repeat(Math.min(this.sessionStars, 10));
     playSuccess();
     this.dropConfetti();
     this.onWin?.();

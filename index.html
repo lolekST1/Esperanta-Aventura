@@ -21,11 +21,40 @@
         <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="3" seed="11" result="n"/>
         <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
       </filter>
-      <!-- Wersja dla małych ikon obiektów (viewBox 0 0 100 100) -->
+      <!-- Wersja dla małych ikon obiektów i teł scen (viewBox 0 0 100 100) -->
       <filter id="o-wob" x="-12%" y="-12%" width="124%" height="124%">
         <feTurbulence type="fractalNoise" baseFrequency="0.13" numOctaves="3" seed="6" result="n"/>
         <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
       </filter>
+      <!-- Ziarno papieru dla teł scen (przestrzeń 0–100) -->
+      <filter id="u-grain">
+        <feTurbulence type="fractalNoise" baseFrequency="3.5" numOctaves="2" seed="5" result="n"/>
+        <feColorMatrix in="n" type="matrix"
+          values="0 0 0 0 0.42  0 0 0 0 0.33  0 0 0 0 0.22  0 0 0 0.07 0"/>
+      </filter>
+
+      <!-- Drobne symbole terenu — wspólne dla mapy wyspy i teł stref.
+           Muszą żyć TUTAJ (svg 0×0, nie display:none), bo tła stref
+           używają ich, gdy ekran mapy jest ukryty. -->
+      <g id="m-tree">
+        <rect x="-1.1" y="2.6" width="2.2" height="4.6" rx="0.9" fill="#8a5a34"/>
+        <circle cx="-0.8" cy="-2.4" r="3.8" fill="url(#g-tree)"/>
+        <circle cx="3" cy="-0.6" r="2.9" fill="url(#g-tree)"/>
+        <circle cx="-3.6" cy="0" r="2.6" fill="url(#g-tree)"/>
+        <circle cx="0.3" cy="1.3" r="3.2" fill="url(#g-tree)"/>
+      </g>
+      <g id="m-fruit-tree">
+        <rect x="-1" y="3" width="2" height="4" rx="0.8" fill="#8a5a34"/>
+        <circle cx="0" cy="-1" r="4.4" fill="url(#g-tree)"/>
+        <circle cx="-1.8" cy="-2.2" r="1" fill="#e04b3b"/>
+        <circle cx="1.6" cy="-0.2" r="1" fill="#e04b3b"/>
+        <circle cx="0.2" cy="-3.4" r="1" fill="#e04b3b"/>
+      </g>
+      <g id="m-house">
+        <rect x="-3.4" y="-1" width="6.8" height="5" rx="0.8" fill="#f7ead0" stroke="#c9a86e" stroke-width="0.4"/>
+        <path d="M-4.4,-0.6 Q0,-6.4 4.4,-0.6 Z" fill="#cf6b3c" stroke="#a84f27" stroke-width="0.4"/>
+        <rect x="-1" y="1.2" width="2" height="2.8" rx="0.6" fill="#8a5a34"/>
+      </g>
 
       <linearGradient id="g-vulpo" x1="0" y1="0" x2="0.35" y2="1">
         <stop offset="0%" stop-color="#f79a4e"/><stop offset="100%" stop-color="#dd5f1d"/>
@@ -163,25 +192,6 @@
                pierścień fal i luźna kreska tuszu. -->
           <path id="coast" d="M14,52 Q10,38 20,32 Q18,20 34,20 Q40,8 54,14 Q66,6 76,16 Q90,16 88,30 Q96,40 90,50 Q96,64 86,70 Q88,84 72,84 Q64,94 52,88 Q38,96 30,86 Q14,86 16,72 Q6,64 14,52 Z"/>
 
-          <g id="m-tree">
-            <rect x="-1.1" y="2.6" width="2.2" height="4.6" rx="0.9" fill="#8a5a34"/>
-            <circle cx="-0.8" cy="-2.4" r="3.8" fill="url(#g-tree)"/>
-            <circle cx="3" cy="-0.6" r="2.9" fill="url(#g-tree)"/>
-            <circle cx="-3.6" cy="0" r="2.6" fill="url(#g-tree)"/>
-            <circle cx="0.3" cy="1.3" r="3.2" fill="url(#g-tree)"/>
-          </g>
-          <g id="m-fruit-tree">
-            <rect x="-1" y="3" width="2" height="4" rx="0.8" fill="#8a5a34"/>
-            <circle cx="0" cy="-1" r="4.4" fill="url(#g-tree)"/>
-            <circle cx="-1.8" cy="-2.2" r="1" fill="#e04b3b"/>
-            <circle cx="1.6" cy="-0.2" r="1" fill="#e04b3b"/>
-            <circle cx="0.2" cy="-3.4" r="1" fill="#e04b3b"/>
-          </g>
-          <g id="m-house">
-            <rect x="-3.4" y="-1" width="6.8" height="5" rx="0.8" fill="#f7ead0" stroke="#c9a86e" stroke-width="0.4"/>
-            <path d="M-4.4,-0.6 Q0,-6.4 4.4,-0.6 Z" fill="#cf6b3c" stroke="#a84f27" stroke-width="0.4"/>
-            <rect x="-1" y="1.2" width="2" height="2.8" rx="0.6" fill="#8a5a34"/>
-          </g>
         </defs>
 
         <!-- morze -->
@@ -287,6 +297,8 @@
 
   <!-- Główny ekran gry -->
   <section id="game-screen" class="screen hidden">
+    <!-- Malowane tło strefy (za sceną) — wypełniane przez game.js -->
+    <div id="zone-bg" class="zone-bg" aria-hidden="true"></div>
     <div id="stage">
       <div id="npc-area">
         <div id="npc" class="npc"></div>
@@ -328,7 +340,7 @@
   <!-- Wybór głosu lektora (ekran dla rodzica) -->
   <section id="voice-screen" class="screen overlay hidden">
     <div class="vortaro-box">
-      <h2>⚙️ Głos lektora</h2>
+      <h2 id="voice-title">Głos lektora</h2>
       <p class="voice-hint">Stuknij głos, aby posłuchać próbki. Wybór zostanie zapamiętany.</p>
       <div id="voice-list" class="voice-list"></div>
 
@@ -347,7 +359,7 @@
   <!-- Vortaro (album słówek) -->
   <section id="vortaro-screen" class="screen overlay hidden">
     <div class="vortaro-box">
-      <h2>📖 Mia Vortaro</h2>
+      <h2 id="vortaro-title">Mia Vortaro</h2>
       <div id="vortaro-grid" class="vortaro-grid"></div>
       <button id="btn-close-vortaro" class="big-button">✖ Fermi</button>
     </div>

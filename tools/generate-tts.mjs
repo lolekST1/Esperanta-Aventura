@@ -88,7 +88,17 @@ const COMPOUND_BREAKS = {
   "ĉi-elarkon": "ĉiel-arkon",
 };
 
+// Nadpisy dla CAŁYCH tekstów — gdy ogólne reguły dają zły wynik w jednym
+// konkretnym przypadku. "sciuro" jako samotne słówko-nagroda (bardzo wolne
+// tempo) z zapisem "s'tsi-uro" wychodziło jako przeciągnięte "ssss-ci-uro";
+// zwarty zapis bez separatora czyta się poprawnie. W zdaniach ("Trovu la
+// sciuron!") ogólna reguła s'ts działa dobrze — nie ruszamy jej.
+const EXACT_TEXT_OVERRIDES = {
+  "sciuro": "stsi-uro",
+};
+
 function preprocessEsperantoForTTS(text) {
+  if (EXACT_TEXT_OVERRIDES[text]) return EXACT_TEXT_OVERRIDES[text];
   let out = text;
   for (const [word, safe] of Object.entries(LOOKALIKE_WORDS)) {
     out = out.replace(new RegExp(`\\b${word}\\b`, "g"), safe);

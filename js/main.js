@@ -3,13 +3,25 @@ import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
 import { ZONES, ZONE_ORDER } from "./data/zones.js";
-import { npcArt, avatarArt, starIcon } from "./art.js";
+import { npcArt, avatarArt, starIcon, uiIcon } from "./art.js";
 
 const el = (id) => document.getElementById(id);
 
 // Statyczne ozdobniki interfejsu w stylu gry (zamiast emoji).
 el("start-npc").innerHTML = npcArt("vulpo");
 el("star-icon").innerHTML = starIcon(22);
+el("btn-map").innerHTML = uiIcon("island", 32);
+el("btn-vortaro").innerHTML = uiIcon("book", 30);
+el("btn-story-replay").innerHTML = uiIcon("scroll", 30);
+el("btn-voice").innerHTML = uiIcon("gear", 30);
+el("btn-speak").innerHTML = uiIcon("speaker", 28);
+el("ghost-hand").innerHTML = uiIcon("hand", 56);
+el("btn-start").innerHTML = `${uiIcon("play", 26)} Ludi!`;
+el("btn-map-win").innerHTML = `${uiIcon("island", 26)} Mapo`;
+el("btn-replay").innerHTML = `${uiIcon("replay", 24)} Denove`;
+el("btn-island-continue").innerHTML = `${uiIcon("island", 26)} Reen al la mapo`;
+el("vortaro-title").innerHTML = `${uiIcon("book", 26)} Mia Vortaro`;
+el("voice-title").innerHTML = `${uiIcon("gear", 24)} Głos lektora`;
 const SCREENS = ["start-screen", "story-screen", "map-screen", "game-screen", "win-screen", "island-win-screen"];
 
 const game = new Game();
@@ -25,12 +37,14 @@ function allZonesDone(save) {
   return ZONE_ORDER.every((id) => save.zones[id]?.done);
 }
 
-function showRealMap() {
-  renderMap(game, enterZone);
+function showRealMap(arrival = false) {
+  renderMap(game, enterZone, arrival);
   showScreen("map-screen");
 }
 
-function goToMap() {
+// arrival=true tylko po bajce wprowadzającej: balon z awatarem
+// ląduje na wyspie, zanim postać stanie na drodze.
+function goToMap(arrival = false) {
   game.deactivate();
   stopSpeech();
 
@@ -40,7 +54,7 @@ function goToMap() {
     showIslandCelebration();
     return;
   }
-  showRealMap();
+  showRealMap(arrival);
 }
 
 function showIslandCelebration() {
@@ -48,7 +62,7 @@ function showIslandCelebration() {
   const npcs = el("island-win-npcs");
   npcs.innerHTML = `<span>${avatarArt(game.save.avatar)}</span>` +
     ZONE_ORDER.map((id) => `<span>${npcArt(ZONES[id].npc.id)}</span>`).join("");
-  el("island-win-stars").textContent = `⭐ ${game.save.stars}`;
+  el("island-win-stars").innerHTML = `${starIcon(28)} ${game.save.stars}`;
   showScreen("island-win-screen");
   speak("Vi esploris la tutan Esperantion! Ĉiuj estas dankemaj al vi!");
 }
@@ -66,7 +80,7 @@ function enterZone(zone) {
 
 function startStory() {
   showScreen("story-screen");
-  runIntro(game, goToMap);
+  runIntro(game, () => goToMap(true));
 }
 
 game.onWin = () => showScreen("win-screen");
@@ -78,8 +92,10 @@ el("btn-start").addEventListener("click", () => {
   else startStory();
 });
 
-el("btn-map").addEventListener("click", goToMap);
-el("btn-map-win").addEventListener("click", goToMap);
+// Uwaga: nie podpinamy goToMap bezpośrednio — handler dostałby obiekt
+// zdarzenia jako (truthy) argument `arrival` i balon lądowałby co kliknięcie.
+el("btn-map").addEventListener("click", () => goToMap());
+el("btn-map-win").addEventListener("click", () => goToMap());
 el("btn-story-replay").addEventListener("click", () => {
   game.deactivate();
   stopSpeech();

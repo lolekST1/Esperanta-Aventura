@@ -9,7 +9,7 @@
 
 import { ZONES, ZONE_ORDER } from "./data/zones.js";
 import { speak, playRetry, playTap } from "./audio.js";
-import { npcArt, avatarArt, starIcon, sparkIcon, lockIcon } from "./art.js";
+import { npcArt, avatarArt, starIcon, sparkIcon, lockIcon, balloonWithAvatar } from "./art.js";
 
 // Awatar stoi kawałek pod znacznikiem strefy, żeby nie zasłaniać jego
 // etykiety i statusu — logicznie to wciąż "ta sama" pozycja.
@@ -127,7 +127,29 @@ function walkAlong(avatar, pathEl, fromS, toS) {
   });
 }
 
-export function renderMap(game, onSelect) {
+// Scena przylotu (po bajce wprowadzającej): balon z awatarem sfruwa
+// z nieba na miejsce startowe, znika, a na drodze staje postać.
+function playArrival(avatarEl, savedAvatar, x, y) {
+  const canvas = el("map-canvas");
+  canvas.querySelector(".balloon-arrival")?.remove();
+  avatarEl.classList.add("landing"); // awatar niewidoczny do wylądowania
+  const balloon = document.createElement("div");
+  balloon.className = "balloon-arrival";
+  balloon.innerHTML = balloonWithAvatar(savedAvatar);
+  canvas.appendChild(balloon);
+  balloon.style.left = `${x}%`;
+  balloon.style.top = "-30%";
+  // reflow, żeby przeglądarka zarejestrowała pozycję startową przed animacją
+  balloon.offsetHeight;
+  balloon.style.top = `${y}%`;
+  setTimeout(() => {
+    balloon.classList.add("gone");
+    avatarEl.classList.remove("landing");
+    setTimeout(() => balloon.remove(), 800);
+  }, 2700);
+}
+
+export function renderMap(game, onSelect, arrival = false) {
   const save = game.save;
   const road = el("map-road");
   const roadBed = el("map-road-bed");
@@ -146,6 +168,7 @@ export function renderMap(game, onSelect) {
   walkFrame++; // unieważnij ewentualny spacer z poprzedniego renderu
   const startPoint = road.getPointAtLength(arcOf[startId]);
   placeAvatar(avatar, startPoint.x, startPoint.y);
+  if (arrival) playArrival(avatar, save.avatar, startPoint.x, startPoint.y);
 
   ZONE_ORDER.forEach((zoneId, i) => {
     const zone = ZONES[zoneId];

@@ -78,7 +78,7 @@ export const AUDIO_MANIFEST = {
   "0.7|1.15|rozkolora": "assets/audio/reward-2ed2de080b7d.mp3",
   "0.7|1.15|ruĝa": "assets/audio/reward-5accbe61557f.mp3",
   "0.7|1.15|salti": "assets/audio/reward-14172226155c.mp3",
-  "0.7|1.15|sciuro": "assets/audio/reward-433a85e8ebbc.mp3",
+  "0.7|1.15|sciuro": "assets/audio/reward-eaef8c021d20.mp3",
   "0.7|1.15|ŝildo": "assets/audio/reward-837ef66f3322.mp3",
   "0.7|1.15|ŝlosilo": "assets/audio/reward-5ef5ece4e57f.mp3",
   "0.7|1.15|stelo": "assets/audio/reward-002a9cf56466.mp3",

@@ -406,6 +406,24 @@ function drakoArt() {
   <path d="M102,162 Q120,172 138,160" fill="none" stroke="#26331f" stroke-width="2.6" stroke-linecap="round"/>`;
 }
 
+function nubetoArt() {
+  return `
+  <g filter="url(#a-wob)">
+    <ellipse cx="120" cy="152" rx="88" ry="52" fill="url(#g-nubeto)" stroke="#9db4d8" stroke-width="2" stroke-opacity="0.55"/>
+    <circle cx="64" cy="118" r="40" fill="url(#g-nubeto)" stroke="#9db4d8" stroke-width="2" stroke-opacity="0.55"/>
+    <circle cx="122" cy="92" r="52" fill="url(#g-nubeto)" stroke="#9db4d8" stroke-width="2" stroke-opacity="0.55"/>
+    <circle cx="178" cy="122" r="38" fill="url(#g-nubeto)" stroke="#9db4d8" stroke-width="2" stroke-opacity="0.55"/>
+    <path d="M50,100 Q58,64 92,54 Q76,74 70,98 Q60,112 50,100 Z" fill="#ffffff" opacity="0.55"/>
+    <path d="M168,152 Q198,152 202,172 Q186,184 164,174 Z" fill="#000000" opacity="0.05"/>
+    <path d="M58,198 C58,198 66,208 66,212 A8,8 0 1 1 50,212 C50,208 58,198 58,198 Z"
+          fill="#9cc8e8" stroke="#7fb2c9" stroke-width="1.4" opacity="0.85"/>
+    <path d="M184,194 C184,194 190,202 190,205 A6.5,6.5 0 1 1 177,205 C177,202 184,194 184,194 Z"
+          fill="#9cc8e8" stroke="#7fb2c9" stroke-width="1.2" opacity="0.75"/>
+    ${BLUSH}
+  </g>
+  ${EYES}${SMILE}`;
+}
+
 const NPC_BUILDERS = {
   vulpo: vulpoArt,
   urso: ursoArt,
@@ -413,6 +431,7 @@ const NPC_BUILDERS = {
   strigo: strigoArt,
   kankro: kankroArt,
   drako: drakoArt,
+  nubeto: nubetoArt,
 };
 
 export function npcArt(id) {
@@ -641,6 +660,29 @@ const BACKDROPS = {
     </g>
     <g fill="#ffffff" opacity="0.6" filter="url(#o-wob)">
       <ellipse cx="78" cy="18" rx="9" ry="3"/><ellipse cx="85" cy="15.5" rx="5.5" ry="2.4"/>
+    </g>`),
+  // Strefa NA niebie: "ziemia" to puchaty dywan z chmur, nad nim słońce,
+  // tęcza i przelatujące ptaki.
+  cielo: () => backdropSVG("cielo", "#9cc3ea", "#e8f3fb", "#eef4fb", `
+    <circle cx="80" cy="20" r="9" fill="#f6d76a" opacity="0.8" filter="url(#o-wob)"/>
+    <g fill="#ffffff" opacity="0.85" filter="url(#o-wob)">
+      <ellipse cx="18" cy="42" rx="13" ry="4.5"/><ellipse cx="27" cy="39" rx="8" ry="3.6"/>
+      <ellipse cx="72" cy="66" rx="11" ry="4"/><ellipse cx="80" cy="63.5" rx="7" ry="3.2"/>
+      <ellipse cx="34" cy="98" rx="12" ry="4.2"/><ellipse cx="42" cy="95" rx="7.5" ry="3.4"/>
+    </g>
+    <g fill="none" opacity="0.55" filter="url(#o-wob)">
+      <path d="M8,165 A24,24 0 0 1 56,165" stroke="#e0648a" stroke-width="2.2"/>
+      <path d="M12,165 A20,20 0 0 1 52,165" stroke="#f2b23d" stroke-width="2.2"/>
+      <path d="M16,165 A16,16 0 0 1 48,165" stroke="#58a86a" stroke-width="2.2"/>
+    </g>
+    <g stroke="#5a628c" stroke-width="1" fill="none" opacity="0.65" filter="url(#o-wob)">
+      <path d="M58,32 q3,-3 6,0 q3,3 6,0"/>
+      <path d="M14,66 q2.5,-2.5 5,0 q2.5,2.5 5,0"/>
+    </g>
+    <g fill="#ffffff" opacity="0.9" filter="url(#o-wob)">
+      <ellipse cx="14" cy="162" rx="11" ry="4.5"/>
+      <ellipse cx="62" cy="163" rx="13" ry="5"/>
+      <ellipse cx="92" cy="161" rx="10" ry="4.5"/>
     </g>`),
 };
 

@@ -149,6 +149,8 @@ const TRICKY_WORDS = [
   "Tuŝu la feliĉan vizaĝon!",
   "Trovu la ŝlosilon!",
   "Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!",
+  "Trovu la aviadilon!",
+  "Memoru, kie estas la fulmo!",
 ];
 
 function renderTrickyWords() {

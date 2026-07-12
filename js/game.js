@@ -30,6 +30,10 @@ const HINT_DELAY_MS = 4000;
 // Adaptacyjne powtórki: ile słówek maksymalnie dokłada się na koniec strefy.
 const MAX_REVIEW_TASKS = 2;
 
+// Kaŝludo (type "memory"): ile czasu dziecko widzi obiekty, zanim
+// zakryją je chmurki.
+const MEMORY_PEEK_MS = 2600;
+
 function loadSave() {
   let save;
   try {
@@ -208,6 +212,7 @@ export class Game {
 
     this.seqIndex = 0;
     const isDrag = task.type === "drag";
+    const isMemory = task.type === "memory";
     el("instruction").textContent = task.instruction;
     // Przy zadaniu "Donu..." NPC świeci się jako cel upuszczenia.
     el("npc").className = "npc" + (isDrag ? " drop-target" : "");
@@ -237,10 +242,44 @@ export class Game {
       box.appendChild(btn);
     }
 
-    this.locked = false;
+    // Kaŝludo: podczas podglądu stukanie jest zablokowane — dziecko ma
+    // patrzeć i zapamiętywać; odblokowanie dopiero po zakryciu chmurkami.
+    this.locked = isMemory;
     await speak(task.instruction, this.voice);
     if (this.stale(s)) return;
+    if (isMemory) {
+      await wait(MEMORY_PEEK_MS);
+      if (this.stale(s)) return;
+      this.coverMemory();
+      this.locked = false;
+    }
     this.scheduleHint(task, s);
+  }
+
+  // ---------- Kaŝludo (type "memory") ----------
+  // Chmurki nasuwają się na obiekty; dziecko stuka z pamięci. Stuknięcie
+  // odsłania to, co było pod spodem — także przy pomyłce, żeby dziecko
+  // widziało, CO znalazło, zanim chmurki wrócą.
+
+  coverMemory() {
+    for (const btn of el("objects").children) {
+      if (btn.querySelector(".cloud-lid")) continue;
+      const lid = document.createElement("span");
+      lid.className = "cloud-lid";
+      setGlyph(lid, "☁️");
+      btn.appendChild(lid);
+    }
+  }
+
+  uncoverMemory() {
+    for (const btn of el("objects").children) this.liftLid(btn);
+  }
+
+  liftLid(btn) {
+    const lid = btn.querySelector(".cloud-lid");
+    if (!lid) return;
+    lid.classList.add("lift");
+    setTimeout(() => lid.remove(), 500);
   }
 
   onTap(btn, obj) {
@@ -249,6 +288,7 @@ export class Game {
     this.cancelHint();
     playTap();
     if (this.task.type === "sequence") return this.onSeqTap(btn, obj);
+    if (this.task.type === "memory") this.liftLid(btn); // odsłoń, co było pod chmurką
     if (obj.id === this.task.correct) {
       this.onCorrect(btn);
     } else {
@@ -362,7 +402,7 @@ export class Game {
   }
 
   // ---------- Duszek ręki (demonstracja pierwszego zadania każdego typu) ----------
-  // Przy PIERWSZYM zadaniu danego typu ("tap"/"drag"/"sequence") w całej grze,
+  // Przy PIERWSZYM zadaniu danego typu ("tap"/"drag"/"sequence"/"memory") w całej grze,
   // jeśli dziecko samo nie zareaguje w ciągu chwili, na scenie pojawia się
   // dłoń-duszek i pokazuje dokładnie co zrobić — nie klika za dziecko, tylko
   // demonstruje. Znacznik hintsSeen zapisujemy natychmiast przy planowaniu,
@@ -539,6 +579,20 @@ export class Game {
     btn.classList.remove("wrong");
     el("npc").className = "npc";
     el("instruction").textContent = this.task.instruction;
+
+    // Kaŝludo: po pomyłce chmurki odpływają i dziecko dostaje nowy
+    // podgląd — dopiero potem wszystko znów się chowa.
+    if (this.task.type === "memory") {
+      this.uncoverMemory();
+      await speak(this.task.instruction, this.voice);
+      if (this.stale(s)) return;
+      await wait(MEMORY_PEEK_MS);
+      if (this.stale(s)) return;
+      this.coverMemory();
+      this.locked = false;
+      return;
+    }
+
     this.locked = false;
     speak(this.task.instruction, this.voice);
   }

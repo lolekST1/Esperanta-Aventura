@@ -516,6 +516,70 @@ const OBJ = {
     <rect x="45" y="68" width="10" height="14" rx="4" fill="#6b4226"/>
     <path d="M18,88 Q50,94 82,88" fill="none" stroke="#b39a6e" stroke-width="3" stroke-linecap="round"/>`)),
 
+  // ---------- Ĉielo ----------
+  "🪁": I(W(`
+    <path d="M50,6 L80,42 L50,80 L20,42 Z" fill="#e0648a" stroke="#b23f68" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M50,6 L50,80 M20,42 L80,42" stroke="#fbf0dd" stroke-width="2.6" opacity="0.85"/>
+    <ellipse cx="38" cy="30" rx="8" ry="6" fill="#fff" opacity="0.3"/>
+    <path d="M50,80 Q42,86 46,94" fill="none" stroke="#8a6136" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M44,84 l-8,-2 4,7 Z" fill="#f2b23d" stroke="#c9992e" stroke-width="1.4"/>
+    <path d="M47,93 l-7,2 6,4 Z" fill="#4fa7d8" stroke="#2f7fae" stroke-width="1.4"/>`)),
+  "🎈": I(W(`
+    <ellipse cx="50" cy="36" rx="26" ry="30" fill="#e04b3b" stroke="#b23325" stroke-width="3"/>
+    <path d="M43,67 L57,67 L50,76 Z" fill="#b23325"/>
+    <path d="M50,76 Q40,84 48,94" fill="none" stroke="#8a6136" stroke-width="2.4" stroke-linecap="round"/>
+    <ellipse cx="40" cy="24" rx="8" ry="11" fill="#fff" opacity="0.35"/>`)),
+  "✈️": I(W(`
+    <path d="M14,44 L24,20 L36,42 Z" fill="#4a5a8c" stroke="#36436b" stroke-width="2.5"/>
+    <ellipse cx="52" cy="52" rx="40" ry="14" fill="#eef1f6" stroke="#8b93a5" stroke-width="3"/>
+    <path d="M46,56 L30,86 L46,82 L62,58 Z" fill="#4a5a8c" stroke="#36436b" stroke-width="2.5"/>
+    <circle cx="42" cy="48" r="3.6" fill="#aee7f5" stroke="#8b93a5" stroke-width="1.4"/>
+    <circle cx="56" cy="48" r="3.6" fill="#aee7f5" stroke="#8b93a5" stroke-width="1.4"/>
+    <circle cx="70" cy="48" r="3.6" fill="#aee7f5" stroke="#8b93a5" stroke-width="1.4"/>
+    <path d="M20,48 Q28,44 36,46" fill="none" stroke="#fff" stroke-width="3" opacity="0.5" stroke-linecap="round"/>`)),
+  "⚡": I(W(`
+    <path d="M58,4 L26,52 L44,52 L36,94 L74,40 L54,40 Z"
+          fill="url(#g-gold)" stroke="#b57a18" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M52,14 L38,42" stroke="#fff" stroke-width="3" opacity="0.4" stroke-linecap="round"/>`)),
+  "🙈": I(W(`
+    <circle cx="50" cy="50" r="36" fill="#f8d3a5" stroke="#cfa06b" stroke-width="3"/>
+    <ellipse cx="33" cy="44" rx="14" ry="12" fill="#f0c398" stroke="#cfa06b" stroke-width="2.5"/>
+    <ellipse cx="67" cy="44" rx="14" ry="12" fill="#f0c398" stroke="#cfa06b" stroke-width="2.5"/>
+    <path d="M27,40 L27,48 M33,38 L33,48 M39,40 L39,48 M61,40 L61,48 M67,38 L67,48 M73,40 L73,48"
+          stroke="#cfa06b" stroke-width="1.8" opacity="0.8"/>
+    <path d="M40,68 Q50,76 60,68" fill="none" stroke="#4a2f1f" stroke-width="3.2" stroke-linecap="round"/>
+    <ellipse cx="24" cy="62" rx="6" ry="4" fill="#e79a91" opacity="0.7"/>
+    <ellipse cx="76" cy="62" rx="6" ry="4" fill="#e79a91" opacity="0.7"/>`)),
+  "🔍": I(W(`
+    <circle cx="42" cy="40" r="26" fill="#d8ecf6" fill-opacity="0.55" stroke="#4a5a8c" stroke-width="6"/>
+    <path d="M62,60 L86,84" stroke="#8a5a34" stroke-width="9" stroke-linecap="round"/>
+    <path d="M28,32 Q34,22 46,22" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.7"/>`)),
+  "🌅": I(W(`
+    <rect x="8" y="62" width="84" height="28" rx="6" fill="#4fa7d8" stroke="#2f7fae" stroke-width="2.5"/>
+    <path d="M28,62 A22,22 0 0 1 72,62 Z" fill="url(#g-gold)" stroke="#b57a18" stroke-width="2.5"/>
+    <g stroke="#e0a63c" stroke-width="4.5" stroke-linecap="round">
+      <line x1="50" y1="24" x2="50" y2="32"/>
+      <line x1="24" y1="36" x2="30" y2="42"/><line x1="76" y1="36" x2="70" y2="42"/>
+      <line x1="12" y1="58" x2="20" y2="58"/><line x1="88" y1="58" x2="80" y2="58"/>
+    </g>
+    <path d="M18,72 q3,-2.5 6,0 q3,2.5 6,0 M60,80 q3,-2.5 6,0 q3,2.5 6,0"
+          fill="none" stroke="#dff0ee" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>`)),
+  "💭": I(W(`
+    <path d="M50,12 Q78,12 84,32 Q94,38 88,52 Q90,66 74,68 Q66,78 52,74 Q36,80 28,68 Q12,66 14,50 Q8,36 20,30 Q26,12 50,12 Z"
+          fill="#ffffff" stroke="#c4d2dc" stroke-width="3"/>
+    <circle cx="30" cy="80" r="6" fill="#fff" stroke="#c4d2dc" stroke-width="2.4"/>
+    <circle cx="18" cy="91" r="4" fill="#fff" stroke="#c4d2dc" stroke-width="2"/>
+    <path d="M48,26 l3,7.2 7.2,3 -7.2,3 -3,7.2 -3,-7.2 -7.2,-3 7.2,-3 Z" fill="url(#g-gold)"/>
+    <path d="M68,42 l1.6,3.8 3.8,1.6 -3.8,1.6 -1.6,3.8 -1.6,-3.8 -3.8,-1.6 3.8,-1.6 Z" fill="#f6d76a"/>`)),
+  "🤗": I(W(`
+    <circle cx="50" cy="44" r="32" fill="#f8d3a5" stroke="#cfa06b" stroke-width="3"/>
+    <path d="M36,38 Q42,32 48,38 M52,38 Q58,32 64,38" fill="none" stroke="#4a2f1f" stroke-width="3" stroke-linecap="round"/>
+    <path d="M38,54 Q50,64 62,54" fill="none" stroke="#4a2f1f" stroke-width="3.2" stroke-linecap="round"/>
+    <ellipse cx="30" cy="50" rx="6" ry="4" fill="#e79a91" opacity="0.75"/>
+    <ellipse cx="70" cy="50" rx="6" ry="4" fill="#e79a91" opacity="0.75"/>
+    <path d="M12,86 Q10,68 24,66 Q34,64 40,74 Q34,84 22,86 Z" fill="#f0c398" stroke="#cfa06b" stroke-width="2.5"/>
+    <path d="M88,86 Q90,68 76,66 Q66,64 60,74 Q66,84 78,86 Z" fill="#f0c398" stroke="#cfa06b" stroke-width="2.5"/>`)),
+
   // ---------- Wspólne ----------
   "❓": I(W(`
     <circle cx="50" cy="50" r="40" fill="#fff8e8" stroke="#e3cf9f" stroke-width="3"/>

@@ -7,6 +7,9 @@
 //                              ("Donu la panon al Urso!")
 //                 "sequence" — stuknij obiekty w kolejności z pola
 //                              `sequence` ("Unue... poste...")
+//                 "memory"   — kaŝludo: obiekty widać przez chwilę, potem
+//                              zakrywają je chmurki i dziecko stuka
+//                              z pamięci ("Memoru, kie estas...!")
 //   instruction — tekst, który mówi NPC (zawsze po esperancku)
 //   objects     — obiekty na scenie: id, emoji, opcjonalnie:
 //                   scale — mnożnik rozmiaru (nauka granda/malgranda)
@@ -29,7 +32,8 @@
 // dla TTS): Vulpo jest szybki i wysoki, Urso powolny i niski, Papago
 // wysoki, skrzekliwy i wszystko powtarza dwa razy, Strigo mądry i spokojny,
 // Kankro żywiołowy i mówi z charakterystycznym "Klik-klik!", Drako głęboki,
-// powolny i dramatyczny (zaczyna kwestie od "Ha!").
+// powolny i dramatyczny (zaczyna kwestie od "Ha!"), Nubeto miękka,
+// rozmarzona i "puchata" (wtrąca "Puf-puf!"), mówi powoli i wysoko.
 
 export const ZONES = {
   fruktejo: {
@@ -761,8 +765,154 @@ export const ZONES = {
       },
     ],
   },
+
+  cielo: {
+    id: "cielo",
+    name: "Ĉielo",
+    mapEmoji: "☁️",
+    map: { x: 60, y: 18 },
+    npc: {
+      id: "nubeto",
+      emoji: "☁️",
+      name: "Nubeto",
+      greeting: "Saluton... Mi estas Nubeto, la malgranda nubo! Puf-puf!",
+      voice: { rate: 0.8, pitch: 1.65 },
+    },
+    story: [
+      "Alte en la ĉielo mi ludas kaŝludon kun miaj amikoj...",
+      "Ĉu vi volas ludi kun ni? Atentu — estos malfacile!",
+    ],
+    winText: "Puf-puf! Vi trovis ĉion inter la nuboj! La tuta ĉielo dankas vin!",
+    // "trezoro" uczy się w Kastelo (sekretna komnata Drako) — powód, by
+    // najpierw ukończyć tamtejszą akcję-słowo.
+    skill: {
+      word: "trezoro",
+      emoji: "🌈",
+      before: "☁️",
+      after: "🌈✨",
+      line: "Vi konas la vorton trezoro! Trovu la trezoron kaŝitan en la nubo!",
+      praise: "Ho! Ĉielarko! Jen la trezoro de la ĉielo!",
+      lockedLine: "Ŝŝŝ... la nubo kaŝas ion... Lernu pli da vortoj!",
+      reward: { word: "amiko", emoji: "🤗" },
+    },
+    retryPhrases: [
+      "Puf... provu denove!",
+      "Ho, ne tute... provu ankoraŭ, kara!",
+      "Preskaŭ! Pensu bone!",
+    ],
+    successPhrases: ["Puf-puf! Bonege!", "Mirinde!", "Perfekte, kara!", "Hura! Vi flugas alte!"],
+    // Strefa trudniejsza niż poprzednie: 4 obiekty zamiast 3, kaŝludo
+    // (zadania "memory") i trzykrokowa sekwencja.
+    tasks: [
+      {
+        instruction: "Trovu la kajton!",
+        objects: [
+          { id: "kajto", emoji: "🪁" },
+          { id: "balono", emoji: "🎈" },
+          { id: "nubo", emoji: "☁️" },
+          { id: "birdo", emoji: "🐦" },
+        ],
+        correct: "kajto",
+        reward: { word: "kajto", emoji: "🪁" },
+      },
+      {
+        instruction: "Trovu la balonon!",
+        objects: [
+          { id: "balono", emoji: "🎈" },
+          { id: "kajto", emoji: "🪁" },
+          { id: "aviadilo", emoji: "✈️" },
+          { id: "stelo", emoji: "⭐" },
+        ],
+        correct: "balono",
+        reward: { word: "balono", emoji: "🎈" },
+      },
+      {
+        instruction: "Trovu la aviadilon!",
+        objects: [
+          { id: "birdo", emoji: "🐦" },
+          { id: "aviadilo", emoji: "✈️" },
+          { id: "kajto", emoji: "🪁" },
+          { id: "balono", emoji: "🎈" },
+        ],
+        correct: "aviadilo",
+        reward: { word: "aviadilo", emoji: "✈️" },
+      },
+      {
+        instruction: "Trovu la fulmon!",
+        objects: [
+          { id: "fulmo", emoji: "⚡" },
+          { id: "suno", emoji: "☀️" },
+          { id: "luno", emoji: "🌙" },
+          { id: "stelo", emoji: "⭐" },
+        ],
+        correct: "fulmo",
+        reward: { word: "fulmo", emoji: "⚡" },
+      },
+      {
+        // Pierwsza kaŝludo — łagodniejsza (3 obiekty).
+        type: "memory",
+        instruction: "Memoru, kie estas la suno!",
+        objects: [
+          { id: "suno", emoji: "☀️" },
+          { id: "luno", emoji: "🌙" },
+          { id: "stelo", emoji: "⭐" },
+        ],
+        correct: "suno",
+        reward: { word: "kaŝi", emoji: "🙈" },
+      },
+      {
+        type: "memory",
+        instruction: "Memoru, kie estas la kajto!",
+        objects: [
+          { id: "kajto", emoji: "🪁" },
+          { id: "balono", emoji: "🎈" },
+          { id: "aviadilo", emoji: "✈️" },
+          { id: "birdo", emoji: "🐦" },
+        ],
+        correct: "kajto",
+        reward: { word: "trovi", emoji: "🔍" },
+      },
+      {
+        type: "drag",
+        instruction: "Donu la stelon al Nubeto!",
+        objects: [
+          { id: "stelo", emoji: "⭐" },
+          { id: "luno", emoji: "🌙" },
+          { id: "fulmo", emoji: "⚡" },
+        ],
+        correct: "stelo",
+        reward: { word: "brili", emoji: "✨" },
+      },
+      {
+        // Trzykrokowa sekwencja jak w Kastelo — utrwalenie trudnej formy.
+        type: "sequence",
+        instruction: "Unue tuŝu la sunon, poste la fulmon, fine la lunon!",
+        objects: [
+          { id: "suno", emoji: "☀️" },
+          { id: "fulmo", emoji: "⚡" },
+          { id: "luno", emoji: "🌙" },
+          { id: "stelo", emoji: "⭐" },
+        ],
+        sequence: ["suno", "fulmo", "luno"],
+        reward: { word: "tago", emoji: "🌅" },
+      },
+      {
+        // Finałowa kaŝludo: 4 obiekty, wszystkie podobnie "niebiańskie".
+        type: "memory",
+        instruction: "Memoru, kie estas la fulmo!",
+        objects: [
+          { id: "fulmo", emoji: "⚡" },
+          { id: "suno", emoji: "☀️" },
+          { id: "stelo", emoji: "⭐" },
+          { id: "luno", emoji: "🌙" },
+        ],
+        correct: "fulmo",
+        reward: { word: "sonĝo", emoji: "💭" },
+      },
+    ],
+  },
 };
 
 // Kolejność na mapie = kolejność odblokowywania (ukończ strefę,
 // by otworzyć następną).
-export const ZONE_ORDER = ["fruktejo", "vilago", "arbaro", "monto", "marbordo", "kastelo"];
+export const ZONE_ORDER = ["fruktejo", "vilago", "arbaro", "monto", "marbordo", "kastelo", "cielo"];

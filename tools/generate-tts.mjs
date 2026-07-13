@@ -39,7 +39,9 @@ const API_URL = "https://api.openai.com/v1/audio/speech";
 // zweryfikowane głosy — różnicowane tempem (speed) i stylem (instructions,
 // działa tylko z modelem gpt-4o-mini-tts). Wyjątek: drako dostał "onyx"
 // (żaden ze sprawdzonych głosów nie brzmi jak głęboki, dramatyczny smok) —
-// NIEZWERYFIKOWANY jeszcze przez odsłuch, do potwierdzenia.
+// NIEZWERYFIKOWANY jeszcze przez odsłuch, do potwierdzenia. Nubeto (chmurka)
+// dostał "sage" jak Urso/Strigo, ale z wyższym tempem/tonem instrukcji —
+// również NIEZWERYFIKOWANY jeszcze przez odsłuch.
 const ROLES = {
   narrator: { voice: "marin", speed: 0.95, instructions: "Warm, clear, neutral storyteller voice for a children's language-learning app." },
   reward: { voice: "marin", speed: 0.7, instructions: "Speak the single word slowly and very clearly, like teaching pronunciation to a young child." },
@@ -49,6 +51,7 @@ const ROLES = {
   strigo: { voice: "sage", speed: 0.9, instructions: "Calm, wise, thoughtful owl speaking softly and deliberately." },
   kankro: { voice: "coral", speed: 1.05, instructions: "Lively, upbeat, energetic crab at the beach." },
   drako: { voice: "onyx", speed: 0.7, instructions: "Deep, dramatic, booming ancient dragon guardian — slow and powerful." },
+  nubeto: { voice: "sage", speed: 0.8, instructions: "Soft, dreamy, gentle little cloud — light and airy, speaks slowly with a soothing, floaty quality." },
 };
 
 // Kilka stałych kwestii interfejsu, których nie ma w zones.js/story.js —

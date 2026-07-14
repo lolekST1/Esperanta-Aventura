@@ -27,6 +27,18 @@ let pendingRecordingFinish = null;
 const VOICE_KEY = "esperanta-aventuro-voice";
 const VOICE_LANG_PREFS = ["eo", "pl", "hr", "sk", "cs", "it", "es", "pt", "ro"];
 
+// Język TREŚCI gry (nie mylić z językiem GŁOSU czytającego esperanto niżej):
+// "eo" — oryginalna gra po esperancku (transliteracje/hacki fonetyczne
+// poniżej mają sens tylko w tym trybie); "pl"/"en" — treść jest już
+// prawdziwym polskim/angielskim tekstem, więc mówimy go wprost, systemowym
+// głosem danego języka, bez żadnych obejść fonetycznych.
+let contentLang = "eo";
+
+export function setContentLang(lang) {
+  contentLang = lang;
+  pickVoice();
+}
+
 function allVoices() {
   return window.speechSynthesis?.getVoices?.() ?? [];
 }
@@ -51,6 +63,14 @@ function pickVoice() {
       voice = v;
       return;
     }
+  }
+
+  // Treść pl/en: szukamy głosu WŁAŚCIWEGO tego języka wprost — bez
+  // fallbacku esperancki→pokrewne języki poniżej, bo tekst nie jest esperancki.
+  if (contentLang === "pl" || contentLang === "en") {
+    const native = voices.filter((v) => v.lang?.toLowerCase().startsWith(contentLang));
+    voice = preferLocal(native.length ? native : voices) ?? null;
+    return;
   }
 
   const byName = voices.filter((v) => /esperant/i.test(v.name ?? ""));
@@ -169,6 +189,10 @@ function toEnglishPhonetic(text) {
 }
 
 function prepareText(text, lang) {
+  // Treść pl/en jest już prawdziwym tekstem tego języka — żadnych
+  // transliteracji fonetycznych (te służą WYŁĄCZNIE do czytania esperanta
+  // obcojęzycznym głosem, patrz komentarz przy contentLang).
+  if (contentLang !== "eo") return text;
   const l = (lang || "").toLowerCase();
   if (l.startsWith("pl")) return breakKnownLookalikes(toPolish(text));
   if (l.startsWith("en")) return toEnglishPhonetic(text); // już w pełni odpisane fonetycznie
@@ -343,7 +367,7 @@ export function stopSpeech() {
 // Bumpowane ręcznie przy każdej zmianie wymowy/audio — widoczne na ⚙️,
 // żeby łatwo sprawdzić, czy przeglądarka na pewno wczytała najnowszą
 // wersję (PWA potrafi trzymać starą do czasu pełnego zamknięcia+otwarcia).
-export const GAME_VERSION = "v30-cielo";
+export const GAME_VERSION = "v31-i18n";
 
 export function diagnostics() {
   const ua = navigator.userAgent || "";

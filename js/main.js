@@ -1,11 +1,32 @@
-import { initAudio, speak, stopSpeech, getVoiceChoices, setVoiceOverride, diagnostics, testVoice, previewSpeech } from "./audio.js";
+import {
+  initAudio,
+  speak,
+  stopSpeech,
+  getVoiceChoices,
+  setVoiceOverride,
+  setContentLang,
+  diagnostics,
+  testVoice,
+  previewSpeech,
+} from "./audio.js";
 import { Game } from "./game.js";
 import { renderMap } from "./map.js";
 import { runIntro } from "./story.js";
-import { ZONES, ZONE_ORDER } from "./data/zones.js";
+import { loadContent, getLang, setLang } from "./data/content.js";
+import { UI_STRINGS, CONTENT_STRINGS, LANGS } from "./data/i18n.js";
 import { npcArt, avatarArt, starIcon, uiIcon } from "./art.js";
 
 const el = (id) => document.getElementById(id);
+
+const lang = getLang();
+const ui = UI_STRINGS[lang] ?? UI_STRINGS.eo;
+const strings = CONTENT_STRINGS[lang] ?? CONTENT_STRINGS.eo;
+setContentLang(lang);
+
+// Wczytanie właściwej wersji językowej treści PRZED zbudowaniem reszty
+// interfejsu — top-level await jest tu bezpieczny, bo to jedyny <script
+// type="module"> strony i nic nie czeka na main.js poza przeglądarką.
+const { ZONES, ZONE_ORDER, STORY } = await loadContent(lang);
 
 // Statyczne ozdobniki interfejsu w stylu gry (zamiast emoji).
 el("start-npc").innerHTML = npcArt("vulpo");
@@ -16,15 +37,41 @@ el("btn-story-replay").innerHTML = uiIcon("scroll", 30);
 el("btn-voice").innerHTML = uiIcon("gear", 30);
 el("btn-speak").innerHTML = uiIcon("speaker", 28);
 el("ghost-hand").innerHTML = uiIcon("hand", 56);
-el("btn-start").innerHTML = `${uiIcon("play", 26)} Ludi!`;
-el("btn-map-win").innerHTML = `${uiIcon("island", 26)} Mapo`;
-el("btn-replay").innerHTML = `${uiIcon("replay", 24)} Denove`;
-el("btn-island-continue").innerHTML = `${uiIcon("island", 26)} Reen al la mapo`;
-el("vortaro-title").innerHTML = `${uiIcon("book", 26)} Mia Vortaro`;
-el("voice-title").innerHTML = `${uiIcon("gear", 24)} Głos lektora`;
+el("btn-start").innerHTML = `${uiIcon("play", 26)} ${strings.play}`;
+el("btn-map-win").innerHTML = `${uiIcon("island", 26)} ${strings.map}`;
+el("btn-replay").innerHTML = `${uiIcon("replay", 24)} ${strings.replay}`;
+el("btn-island-continue").innerHTML = `${uiIcon("island", 26)} ${strings.islandContinue}`;
+el("vortaro-title").innerHTML = `${uiIcon("book", 26)} ${strings.vortaroTitle}`;
+el("voice-title").innerHTML = `${uiIcon("gear", 24)} ${ui.voiceTitle}`;
+el("voice-hint-1").textContent = ui.voiceHint;
+el("voice-hint-2").textContent = ui.trickyHint;
+el("btn-toggle-diagnostics").textContent = ui.diagToggle;
+el("btn-close-voice").textContent = ui.voiceClose;
+el("btn-close-vortaro").textContent = strings.vortaroClose;
+el("island-win-title").textContent = strings.islandWinTitle;
+el("island-win-text").innerHTML = strings.islandWinText;
 const SCREENS = ["start-screen", "story-screen", "map-screen", "game-screen", "win-screen", "island-win-screen"];
 
-const game = new Game();
+renderLangSwitch();
+
+const game = new Game(lang);
+
+function renderLangSwitch() {
+  const box = el("lang-switch");
+  box.innerHTML = "";
+  const LABELS = { eo: "EO", pl: "PL", en: "EN" };
+  for (const l of LANGS) {
+    const btn = document.createElement("button");
+    btn.className = "lang-button" + (l === lang ? " active" : "");
+    btn.textContent = LABELS[l];
+    btn.addEventListener("click", () => {
+      if (l === lang) return;
+      setLang(l);
+      location.reload();
+    });
+    box.appendChild(btn);
+  }
+}
 
 function showScreen(name) {
   for (const s of SCREENS) el(s).classList.toggle("hidden", s !== name);
@@ -38,7 +85,7 @@ function allZonesDone(save) {
 }
 
 function showRealMap(arrival = false) {
-  renderMap(game, enterZone, arrival);
+  renderMap(game, ZONES, ZONE_ORDER, strings.lockedZone, enterZone, arrival);
   showScreen("map-screen");
 }
 
@@ -64,7 +111,7 @@ function showIslandCelebration() {
     ZONE_ORDER.map((id) => `<span>${npcArt(ZONES[id].npc.id)}</span>`).join("");
   el("island-win-stars").innerHTML = `${starIcon(28)} ${game.save.stars}`;
   showScreen("island-win-screen");
-  speak("Vi esploris la tutan Esperantion! Ĉiuj estas dankemaj al vi!");
+  speak(strings.islandWinSpoken);
 }
 
 el("btn-island-continue").addEventListener("click", () => {
@@ -80,7 +127,7 @@ function enterZone(zone) {
 
 function startStory() {
   showScreen("story-screen");
-  runIntro(game, () => goToMap(true));
+  runIntro(game, STORY, strings, () => goToMap(true));
 }
 
 game.onWin = () => showScreen("win-screen");
@@ -111,8 +158,6 @@ el("btn-speak").addEventListener("pointerdown", () => {
   if (game.task && !game.locked) speak(game.task.instruction, game.voice);
 });
 
-const VOICE_SAMPLE = "Saluton! Mi estas Vulpo! Ni ludu kune!";
-
 function logVoiceEvent(kind, detail) {
   const log = el("voice-log");
   log.classList.remove("hidden");
@@ -127,18 +172,22 @@ function logVoiceEvent(kind, detail) {
 function renderDiagnostics() {
   const d = diagnostics();
   const box = el("voice-diagnostics");
+  const t = ui.diag;
   box.innerHTML = `
-    Wersja gry: ${d.version}<br>
-    speechSynthesis: ${d.hasSynth ? "✅ dostępne" : "❌ NIEDOSTĘPNE"}<br>
-    Liczba głosów: ${d.voiceCount}<br>
-    Język przeglądarki: ${d.lang}<br>
-    Tryb PWA (standalone): ${d.standalone ? "tak" : "nie"}<br>
-    Dźwięk (AudioContext): ${d.audioCtxState ?? "brak"}
-    ${d.likelyInAppBrowser ? `<br><strong>⚠️ To może być przeglądarka wbudowana w aplikację (np. Messenger/Instagram) — takie przeglądarki często blokują mowę. Spróbuj otworzyć link w Chrome lub Safari.</strong>` : ""}
+    ${t.version}: ${d.version}<br>
+    ${t.synthLabel}: ${d.hasSynth ? t.synthYes : t.synthNo}<br>
+    ${t.voiceCount}: ${d.voiceCount}<br>
+    ${t.browserLang}: ${d.lang}<br>
+    ${t.pwaMode}: ${d.standalone ? t.yes : t.no}<br>
+    ${t.audioCtx}: ${d.audioCtxState ?? t.none}
+    ${d.likelyInAppBrowser ? `<br><strong>${t.inAppWarning}</strong>` : ""}
   `;
 }
 
-const TRICKY_WORDS = [
+// Podgląd fonetycznych obejść (transliteracja esperanta) ma sens tylko
+// w trybie "eo" — w pl/en treść jest już naturalnym tekstem tego języka,
+// więc test "trudnych słówek" nic ciekawego by nie pokazał.
+const TRICKY_WORDS = lang === "eo" ? [
   "Trovu la birdon!",
   "Trovu la sciuron!",
   "Tuŝu la dormantan beston!",
@@ -151,11 +200,12 @@ const TRICKY_WORDS = [
   "Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!",
   "Trovu la aviadilon!",
   "Memoru, kie estas la fulmo!",
-];
+] : [];
 
 function renderTrickyWords() {
   const box = el("tricky-words");
   box.innerHTML = "";
+  el("tricky-words-section").classList.toggle("hidden", TRICKY_WORDS.length === 0);
   for (const phrase of TRICKY_WORDS) {
     const { text } = previewSpeech(phrase);
     const btn = document.createElement("button");
@@ -168,6 +218,8 @@ function renderTrickyWords() {
     box.appendChild(btn);
   }
 }
+
+const VOICE_SAMPLE = ZONES[ZONE_ORDER[0]].npc.greeting;
 
 function renderVoiceList() {
   renderDiagnostics();
@@ -188,7 +240,7 @@ function renderVoiceList() {
   };
 
   addItem(
-    `🔄 Automatycznie${!saved && current ? ` — ${current.name}` : ""}`,
+    `🔄 ${ui.autoVoice}${!saved && current ? ` — ${current.name}` : ""}`,
     null,
     current,
     !saved,
@@ -198,7 +250,7 @@ function renderVoiceList() {
     addItem(`${v.name} — ${v.lang}`, id, v, saved === id);
   }
   if (!voices.length) {
-    list.innerHTML = `<p class="vortaro-empty">Ta przeglądarka nie udostępnia żadnych głosów 😢</p>`;
+    list.innerHTML = `<p class="vortaro-empty">${ui.noVoices}</p>`;
   }
 }
 

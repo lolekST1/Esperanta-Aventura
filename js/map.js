@@ -7,7 +7,6 @@
 // awatara (position:absolute, left/top w %) — oba układy współrzędnych
 // są celowo tożsame, żeby droga i znaczniki zawsze się pokrywały.
 
-import { ZONES, ZONE_ORDER } from "./data/zones.js";
 import { speak, playRetry, playTap } from "./audio.js";
 import { npcArt, avatarArt, starIcon, sparkIcon, lockIcon, balloonWithAvatar } from "./art.js";
 
@@ -24,8 +23,8 @@ const el = (id) => document.getElementById(id);
 // prawdziwa wiejska ścieżka. Odchylenia są deterministyczne (na przemian
 // w lewo/prawo), żeby mapa wyglądała tak samo przy każdym renderze.
 
-function roadPoints() {
-  const stops = ZONE_ORDER.map((id) => ZONES[id].map);
+function roadPoints(zones, zoneOrder) {
+  const stops = zoneOrder.map((id) => zones[id].map);
   const pts = [];
   for (let i = 0; i < stops.length - 1; i++) {
     const a = stops[i];
@@ -65,17 +64,17 @@ function catmullRomPath(pts) {
 
 // Pozycja każdej strefy na krzywej (długość łuku od początku drogi) —
 // wyznaczana raz przez próbkowanie; potem spacer to animacja parametru s.
-function zoneArcOffsets(pathEl) {
+function zoneArcOffsets(pathEl, zones, zoneOrder) {
   const total = pathEl.getTotalLength();
   const SAMPLES = 480;
   const offsets = {};
   const best = {};
-  for (const id of ZONE_ORDER) best[id] = Infinity;
+  for (const id of zoneOrder) best[id] = Infinity;
   for (let i = 0; i <= SAMPLES; i++) {
     const s = (total * i) / SAMPLES;
     const p = pathEl.getPointAtLength(s);
-    for (const id of ZONE_ORDER) {
-      const z = ZONES[id].map;
+    for (const id of zoneOrder) {
+      const z = zones[id].map;
       const dist = Math.hypot(p.x - z.x, p.y - z.y);
       if (dist < best[id]) {
         best[id] = dist;
@@ -149,31 +148,31 @@ function playArrival(avatarEl, savedAvatar, x, y) {
   }, 2700);
 }
 
-export function renderMap(game, onSelect, arrival = false) {
+export function renderMap(game, zones, zoneOrder, lockedMsg, onSelect, arrival = false) {
   const save = game.save;
   const road = el("map-road");
   const roadBed = el("map-road-bed");
   const markersBox = el("map-markers");
   const avatar = el("map-avatar");
 
-  const d = catmullRomPath(roadPoints());
+  const d = catmullRomPath(roadPoints(zones, zoneOrder));
   road.setAttribute("d", d);
   roadBed.setAttribute("d", d);
-  const arcOf = zoneArcOffsets(road);
+  const arcOf = zoneArcOffsets(road, zones, zoneOrder);
 
   el("map-avatar-art").innerHTML = avatarArt(save.avatar);
   markersBox.innerHTML = "";
 
-  const startId = save.mapPosition && ZONES[save.mapPosition] ? save.mapPosition : ZONE_ORDER[0];
+  const startId = save.mapPosition && zones[save.mapPosition] ? save.mapPosition : zoneOrder[0];
   walkFrame++; // unieważnij ewentualny spacer z poprzedniego renderu
   const startPoint = road.getPointAtLength(arcOf[startId]);
   placeAvatar(avatar, startPoint.x, startPoint.y);
   if (arrival) playArrival(avatar, save.avatar, startPoint.x, startPoint.y);
 
-  ZONE_ORDER.forEach((zoneId, i) => {
-    const zone = ZONES[zoneId];
+  zoneOrder.forEach((zoneId, i) => {
+    const zone = zones[zoneId];
     const progress = save.zones[zoneId];
-    const unlocked = i === 0 || save.zones[ZONE_ORDER[i - 1]]?.done;
+    const unlocked = i === 0 || save.zones[zoneOrder[i - 1]]?.done;
 
     // Nieodwiedzona jeszcze, ale odblokowana strefa delikatnie pulsuje —
     // zaprasza do stuknięcia. Iskierki = w strefie czeka akcja-słowo,
@@ -216,12 +215,12 @@ export function renderMap(game, onSelect, arrival = false) {
     marker.addEventListener("pointerdown", () => {
       if (unlocked) {
         playTap();
-        const fromId = save.mapPosition && ZONES[save.mapPosition] ? save.mapPosition : ZONE_ORDER[0];
+        const fromId = save.mapPosition && zones[save.mapPosition] ? save.mapPosition : zoneOrder[0];
         game.setMapPosition(zoneId);
         walkAlong(avatar, road, arcOf[fromId], arcOf[zoneId]).then(() => onSelect(zone));
       } else {
         playRetry();
-        speak("Ankoraŭ ne! Unue finu la alian lokon!");
+        speak(lockedMsg);
         marker.classList.add("wobble");
         setTimeout(() => marker.classList.remove("wobble"), 600);
       }

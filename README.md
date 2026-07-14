@@ -175,9 +175,14 @@ Postęp (gwiazdki, zebrane słówka) zapisuje się w `localStorage`.
   („Tuŝu la altan turon!" — nowe przymiotniki alta/malalta w stylu skali
   granda/malgranda), zadanie wieloetapowe: sekwencja na 3 kroki zamiast 2
   („Unue tuŝu la ŝlosilon, poste la pordon, fine la kronon!" — z przypomnieniem
-  „pordo" z Vilaĝo), skill "helpi" (uczony w Marbordo) otwiera sekretną komnatę.
-  Wyspa ma teraz 6 stref — mapa, kolejność odblokowania i finał (7 postaci:
-  awatar + 6 NPC) objęły ją automatycznie, bez zmian w silniku
+  „pordo" z Vilaĝo), skill "helpi" (uczony w Marbordo) otwiera sekretną komnatę
+- ✅ Ĉielo 🌌 — NPC ☁️ Nubeto (miękka, rozmarzona, "Puf-puf!"), słownictwo
+  nieba i przedmiotów latających (kajto/balono/aviadilo/fulmo), nowy typ zadania
+  „kaŝludo" (memory game — obiekty widać przez chwilę, potem się chowają,
+  dziecko stuka z pamięci), skill "trezoro" (uczony w Kastelo) odkrywa
+  ukrytą tęczę w chmurach.
+  Wyspa ma teraz 7 stref — mapa, kolejność odblokowania i finał (8 postaci:
+  awatar + 7 NPC) objęły ją automatycznie, bez zmian w silniku
 - ✅ adaptacyjne powtórki: każda pomyłka podbija licznik `save.mistakes[słowo]`;
   po wyczerpaniu zwykłych zadań strefy silnik niewidocznie dokłada do 2 zadań
   odpowiadających najczęściej mylonym słówkom — z DOWOLNEJ strefy, nie tylko

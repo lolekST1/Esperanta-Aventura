@@ -3,16 +3,17 @@
 // włosów/sierści/grzywy — podgląd przemalowuje się na żywo przy każdym
 // stuknięciu. Uruchamiane przy pierwszym wejściu; można powtórzyć z mapy (📜).
 
-import { STORY } from "./data/story.js";
 import { speak, playTap, playSuccess, NARRATOR, REWARD_VOICE } from "./audio.js";
 import { sceneArt, avatarArt, AVATAR_TYPES, AVATAR_COLORS } from "./art.js";
 
 const el = (id) => document.getElementById(id);
 
 // Wybór koloru to mini-lekcja: każde stuknięcie wypowiada nazwę koloru
-// po esperancku, a wybór typu — nazwę postaci.
+// w języku gry, a wybór typu — nazwę postaci (patrz strings.avatarTypeNames/
+// avatarColorNames — id awatara/koloru zostaje bez zmian, bo art.js go
+// używa do rysowania, tłumaczy się tylko wypowiadana etykieta).
 
-export function runIntro(game, onDone) {
+export function runIntro(game, story, strings, onDone) {
   let idx = 0;
   let chosen = null; // { type, color } w trakcie budowania
 
@@ -28,7 +29,7 @@ export function runIntro(game, onDone) {
   const colors = el("color-grid");
 
   function showSlide() {
-    const slide = STORY[idx];
+    const slide = story[idx];
     el("story-scene").innerHTML = sceneArt(slide.scene);
     el("story-text").textContent = slide.text;
     speak(slide.text, slide.voice ?? NARRATOR);
@@ -37,8 +38,8 @@ export function runIntro(game, onDone) {
   function showTypePick() {
     nextBtn.classList.add("hidden");
     el("story-scene").innerHTML = sceneArt("sparkle");
-    el("story-text").textContent = "Kiu vi estas? Elektu!";
-    speak("Kiu vi estas? Elektu!");
+    el("story-text").textContent = strings.avatarPrompt;
+    speak(strings.avatarPrompt);
     grid.innerHTML = "";
     grid.classList.remove("hidden");
     let picked = false; // pierwsze stuknięcie wygrywa — bez podwójnego wyboru
@@ -52,8 +53,8 @@ export function runIntro(game, onDone) {
         playTap();
         chosen = { type: type.id, color: type.defaultColor };
         // Nazwa postaci musi wybrzmieć DO KOŃCA, zanim odezwie się
-        // "Elektu la koloron!" — kolejne speak() ucinałoby ją w pół słowa.
-        await speak(type.name, REWARD_VOICE);
+        // prompt koloru — kolejne speak() ucinałoby ją w pół słowa.
+        await speak(strings.avatarTypeNames[type.id] ?? type.name, REWARD_VOICE);
         showColorPick();
       });
       grid.appendChild(btn);
@@ -63,8 +64,8 @@ export function runIntro(game, onDone) {
   function showColorPick() {
     grid.classList.add("hidden");
     el("story-scene").innerHTML = avatarArt(chosen);
-    el("story-text").textContent = "Elektu la koloron!";
-    speak("Elektu la koloron!");
+    el("story-text").textContent = strings.colorPrompt;
+    speak(strings.colorPrompt);
     colors.innerHTML = "";
     colors.classList.remove("hidden");
     okBtn.classList.remove("hidden");
@@ -75,7 +76,7 @@ export function runIntro(game, onDone) {
       dot.setAttribute("aria-label", color.id);
       dot.addEventListener("pointerdown", () => {
         playTap();
-        speak(color.id, REWARD_VOICE);
+        speak(strings.avatarColorNames[color.id] ?? color.id, REWARD_VOICE);
         chosen = { ...chosen, color: color.hex };
         el("story-scene").innerHTML = avatarArt(chosen);
         for (const d of colors.children) d.classList.remove("active");
@@ -93,8 +94,8 @@ export function runIntro(game, onDone) {
     okBtn.classList.add("hidden");
     // Nagroda za wybór: własna postać leci balonem na wyspę.
     el("story-scene").innerHTML = sceneArt("flight", chosen);
-    el("story-text").textContent = "Bonege! Ek al la aventuro!";
-    await speak("Bonege! Ek al la aventuro!");
+    el("story-text").textContent = strings.avatarChosen;
+    await speak(strings.avatarChosen);
     cleanup();
     onDone();
   }
@@ -102,7 +103,7 @@ export function runIntro(game, onDone) {
   function onNext() {
     playTap();
     idx++;
-    if (idx < STORY.length) showSlide();
+    if (idx < story.length) showSlide();
     else showTypePick();
   }
 

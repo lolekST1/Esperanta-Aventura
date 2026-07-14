@@ -8,6 +8,7 @@
 import { speak, playSuccess, playRetry, playTap, wait, NARRATOR, REWARD_VOICE } from "./audio.js";
 import { npcArt, avatarArt, migrateAvatar, starIcon, sparkIcon, uiIcon, zoneBackdrop } from "./art.js";
 import { objArt, objSceneArt } from "./objArt.js";
+import { UI_STRINGS, CONTENT_STRINGS } from "./data/i18n.js";
 
 // Ikona zamiast emoji tam, gdzie ją mamy; emoji jako bezpieczny fallback
 // (nowe strefy z nowymi emoji działają od razu, zanim powstanie grafika).
@@ -17,7 +18,9 @@ function setGlyph(node, emoji) {
   else node.textContent = emoji;
 }
 
-const SAVE_KEY = "esperanta-aventuro-save-v1";
+// Zapis osobny na wersję językową — postępy/słowniczek w "pl"/"en" to inna
+// gra (inne słówka) niż w oryginalnym "eo", więc nie powinny się mieszać.
+const SAVE_KEY_BASE = "esperanta-aventuro-save-v1";
 
 const el = (id) => document.getElementById(id);
 
@@ -34,10 +37,10 @@ const MAX_REVIEW_TASKS = 2;
 // zakryją je chmurki.
 const MEMORY_PEEK_MS = 2600;
 
-function loadSave() {
+function loadSave(saveKey) {
   let save;
   try {
-    save = JSON.parse(localStorage.getItem(SAVE_KEY)) ?? {};
+    save = JSON.parse(localStorage.getItem(saveKey)) ?? {};
   } catch {
     save = {};
   }
@@ -55,8 +58,8 @@ function loadSave() {
   return save;
 }
 
-function persist(save) {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+function persist(save, saveKey) {
+  localStorage.setItem(saveKey, JSON.stringify(save));
 }
 
 function shuffle(arr) {
@@ -73,8 +76,12 @@ function randomOf(arr) {
 }
 
 export class Game {
-  constructor() {
-    this.save = loadSave();
+  constructor(lang = "eo") {
+    this.lang = lang;
+    this.ui = UI_STRINGS[lang] ?? UI_STRINGS.eo;
+    this.strings = CONTENT_STRINGS[lang] ?? CONTENT_STRINGS.eo;
+    this.saveKey = lang === "eo" ? SAVE_KEY_BASE : `${SAVE_KEY_BASE}-${lang}`;
+    this.save = loadSave(this.saveKey);
     this.zone = null;
     this.active = false;
     this.session = 0;
@@ -82,6 +89,10 @@ export class Game {
     el("btn-skill").addEventListener("pointerdown", () => this.onSkillTap());
     this.updateHud();
     this.renderVortaro();
+  }
+
+  persist() {
+    persist(this.save, this.saveKey);
   }
 
   hasWord(word) {
@@ -126,7 +137,7 @@ export class Game {
 
   setAvatar(avatar) {
     this.save.avatar = avatar;
-    persist(this.save);
+    this.persist();
     this.updateHud();
   }
 
@@ -134,12 +145,12 @@ export class Game {
   // z gry stał dokładnie tam, gdzie dziecko go zostawiło.
   setMapPosition(zoneId) {
     this.save.mapPosition = zoneId;
-    persist(this.save);
+    this.persist();
   }
 
   markIslandCelebrated() {
     this.save.islandCelebrated = true;
-    persist(this.save);
+    this.persist();
   }
 
   loadZone(zone) {
@@ -199,7 +210,7 @@ export class Game {
       if (this.stale(s)) return;
     }
     this.save.storiesSeen[this.zone.id] = true;
-    persist(this.save);
+    this.persist();
 
     this.showTask();
   }
@@ -412,7 +423,7 @@ export class Game {
     const type = task.type ?? "tap";
     if (this.save.hintsSeen[type]) return;
     this.save.hintsSeen[type] = true;
-    persist(this.save);
+    this.persist();
     this.hintTimer = setTimeout(() => {
       if (this.stale(s) || this.locked) return;
       this.showHint(task, s);
@@ -526,7 +537,7 @@ export class Game {
     const isReview = this.taskIndex >= (this.zone.tasks?.length ?? 0);
     if (isReview && reward?.word) {
       this.save.mistakes[reward.word] = 0;
-      persist(this.save);
+      this.persist();
     }
 
     // Celebracja: taniec NPC, konfetti, fanfary, pochwała do końca.
@@ -564,7 +575,7 @@ export class Game {
     const word = this.task.reward?.word;
     if (word) {
       this.save.mistakes[word] = (this.save.mistakes[word] ?? 0) + 1;
-      persist(this.save);
+      this.persist();
     }
 
     const phrase = randomOf(this.zone.retryPhrases);
@@ -600,7 +611,7 @@ export class Game {
   addStar() {
     this.save.stars++;
     this.sessionStars++;
-    persist(this.save);
+    this.persist();
     this.updateHud();
   }
 
@@ -613,7 +624,7 @@ export class Game {
     if (!reward) return;
     if (!this.save.words.some((w) => w.word === reward.word)) {
       this.save.words.push(reward);
-      persist(this.save);
+      this.persist();
       this.renderVortaro();
       this.renderSkillSpot(); // nowe słówko mogło właśnie odblokować akcję
     }
@@ -734,16 +745,17 @@ export class Game {
       done: true,
       stars: Math.max(prev.stars, this.sessionStars),
     };
-    persist(this.save);
+    this.persist();
 
     el("win-npc").innerHTML =
       `${avatarArt(this.save.avatar)}<span class="win-party">${uiIcon("party", 44)}</span>${npcArt(this.zone.npc.id)}`;
+    el("win-title").textContent = this.strings.winTitle;
     el("win-text").textContent = this.zone.winText;
     el("win-stars").innerHTML = starIcon(30).repeat(Math.min(this.sessionStars, 10));
     playSuccess();
     this.dropConfetti();
     this.onWin?.();
-    speak(`Bonege! ${this.zone.winText}`, this.voice);
+    speak(`${this.strings.winTitle} ${this.zone.winText}`, this.voice);
   }
 
   replay() {
@@ -759,7 +771,7 @@ export class Game {
     const grid = el("vortaro-grid");
     grid.innerHTML = "";
     if (this.save.words.length === 0) {
-      grid.innerHTML = `<p class="vortaro-empty">Ankoraŭ neniu vorto...</p>`;
+      grid.innerHTML = `<p class="vortaro-empty">${this.strings.vortaroEmpty}</p>`;
       return;
     }
     for (const w of this.save.words) {

@@ -123,6 +123,7 @@
   <!-- Ekran startowy -->
   <section id="start-screen" class="screen">
     <div class="start-inner">
+      <div id="lang-switch" class="lang-switch"></div>
       <div id="start-npc" class="start-npc"></div>
       <h1>Esperanta<br>Aventuro</h1>
       <button id="btn-start" class="big-button">▶ Ludi!</button>
@@ -133,8 +134,8 @@
   <section id="island-win-screen" class="screen hidden">
     <div class="start-inner">
       <div id="island-win-npcs" class="island-win-npcs"></div>
-      <h2>Vi esploris la tutan Esperantion!</h2>
-      <p class="island-win-text">Ĉiuj estas dankemaj al vi!<br>Pli da aventuroj venos baldaŭ...</p>
+      <h2 id="island-win-title">Vi esploris la tutan Esperantion!</h2>
+      <p id="island-win-text" class="island-win-text">Ĉiuj estas dankemaj al vi!<br>Pli da aventuroj venos baldaŭ...</p>
       <div id="island-win-stars" class="island-win-stars"></div>
       <button id="btn-island-continue" class="big-button">🏝️ Reen al la mapo</button>
     </div>
@@ -344,11 +345,13 @@
   <section id="voice-screen" class="screen overlay hidden">
     <div class="vortaro-box">
       <h2 id="voice-title">Głos lektora</h2>
-      <p class="voice-hint">Stuknij głos, aby posłuchać próbki. Wybór zostanie zapamiętany.</p>
+      <p id="voice-hint-1" class="voice-hint">Stuknij głos, aby posłuchać próbki. Wybór zostanie zapamiętany.</p>
       <div id="voice-list" class="voice-list"></div>
 
-      <p class="voice-hint">Trudne słówka — testuj pojedynczo:</p>
-      <div id="tricky-words" class="tricky-list"></div>
+      <div id="tricky-words-section">
+        <p id="voice-hint-2" class="voice-hint">Trudne słówka — testuj pojedynczo:</p>
+        <div id="tricky-words" class="tricky-list"></div>
+      </div>
 
       <div id="voice-log" class="voice-log hidden"></div>
 

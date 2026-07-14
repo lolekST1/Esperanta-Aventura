@@ -46,6 +46,31 @@ body {
 
 .start-npc svg { width: 100%; height: auto; display: block; }
 
+/* Przełącznik wersji językowej gry (eo/pl/en) — ekran startowy */
+.lang-switch {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lang-button {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffffcc;
+  color: #4a3b2a;
+  cursor: pointer;
+}
+
+.lang-button.active {
+  background: #ff9f1c;
+  color: #fff;
+}
+
 /* Rząd "awatar 🎉 NPC" na ekranie wygranej strefy */
 .win-npc-row {
   display: flex;

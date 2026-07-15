@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="eo">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#7ec850">
+  <title>Esperanta Aventuro</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Wspólne definicje grafiki (styl "Fabela Insulo"): filtr akwarelowych
+       krawędzi + gradienty używane przez wszystkie SVG generowane w js/art.js.
+       Celowo width/height 0 zamiast display:none — ukryte defs z display:none
+       potrafią wyłączać gradienty/filtry w niektórych przeglądarkach. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="a-wob" x="-15%" y="-15%" width="130%" height="130%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="3" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <!-- Wersja dla małych ikon obiektów i teł scen (viewBox 0 0 100 100) -->
+      <filter id="o-wob" x="-12%" y="-12%" width="124%" height="124%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.13" numOctaves="3" seed="6" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <!-- Ziarno papieru dla teł scen (przestrzeń 0–100) -->
+      <filter id="u-grain">
+        <feTurbulence type="fractalNoise" baseFrequency="3.5" numOctaves="2" seed="5" result="n"/>
+        <feColorMatrix in="n" type="matrix"
+          values="0 0 0 0 0.42  0 0 0 0 0.33  0 0 0 0 0.22  0 0 0 0.07 0"/>
+      </filter>
+
+      <!-- Drobne symbole terenu — wspólne dla mapy wyspy i teł stref.
+           Muszą żyć TUTAJ (svg 0×0, nie display:none), bo tła stref
+           używają ich, gdy ekran mapy jest ukryty. -->
+      <g id="m-tree">
+        <rect x="-1.1" y="2.6" width="2.2" height="4.6" rx="0.9" fill="#8a5a34"/>
+        <circle cx="-0.8" cy="-2.4" r="3.8" fill="url(#g-tree)"/>
+        <circle cx="3" cy="-0.6" r="2.9" fill="url(#g-tree)"/>
+        <circle cx="-3.6" cy="0" r="2.6" fill="url(#g-tree)"/>
+        <circle cx="0.3" cy="1.3" r="3.2" fill="url(#g-tree)"/>
+      </g>
+      <g id="m-fruit-tree">
+        <rect x="-1" y="3" width="2" height="4" rx="0.8" fill="#8a5a34"/>
+        <circle cx="0" cy="-1" r="4.4" fill="url(#g-tree)"/>
+        <circle cx="-1.8" cy="-2.2" r="1" fill="#e04b3b"/>
+        <circle cx="1.6" cy="-0.2" r="1" fill="#e04b3b"/>
+        <circle cx="0.2" cy="-3.4" r="1" fill="#e04b3b"/>
+      </g>
+      <g id="m-house">
+        <rect x="-3.4" y="-1" width="6.8" height="5" rx="0.8" fill="#f7ead0" stroke="#c9a86e" stroke-width="0.4"/>
+        <path d="M-4.4,-0.6 Q0,-6.4 4.4,-0.6 Z" fill="#cf6b3c" stroke="#a84f27" stroke-width="0.4"/>
+        <rect x="-1" y="1.2" width="2" height="2.8" rx="0.6" fill="#8a5a34"/>
+      </g>
+
+      <linearGradient id="g-vulpo" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#f79a4e"/><stop offset="100%" stop-color="#dd5f1d"/>
+      </linearGradient>
+      <linearGradient id="g-urso" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#c78e52"/><stop offset="100%" stop-color="#8f5f33"/>
+      </linearGradient>
+      <linearGradient id="g-papago" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#f2604c"/><stop offset="100%" stop-color="#c93327"/>
+      </linearGradient>
+      <linearGradient id="g-strigo" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#8b93b8"/><stop offset="100%" stop-color="#5a628c"/>
+      </linearGradient>
+      <linearGradient id="g-kankro" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#f4704f"/><stop offset="100%" stop-color="#d84a2a"/>
+      </linearGradient>
+      <linearGradient id="g-drako" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#72b56e"/><stop offset="100%" stop-color="#3f8a52"/>
+      </linearGradient>
+      <linearGradient id="g-nubeto" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#ccdcef"/>
+      </linearGradient>
+      <linearGradient id="g-skin" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0%" stop-color="#f8d3a5"/><stop offset="100%" stop-color="#e6ad78"/>
+      </linearGradient>
+      <linearGradient id="g-shirt" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0%" stop-color="#c96848"/><stop offset="100%" stop-color="#a04527"/>
+      </linearGradient>
+      <linearGradient id="g-white" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0%" stop-color="#fdfaf1"/><stop offset="100%" stop-color="#e9ddc4"/>
+      </linearGradient>
+      <linearGradient id="g-gold" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0%" stop-color="#f6c95c"/><stop offset="100%" stop-color="#e09a2a"/>
+      </linearGradient>
+      <linearGradient id="g-balloon" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0%" stop-color="#f0685a"/><stop offset="100%" stop-color="#cc3d2e"/>
+      </linearGradient>
+      <linearGradient id="g-basket" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0%" stop-color="#c99a5e"/><stop offset="100%" stop-color="#9a6f3c"/>
+      </linearGradient>
+      <radialGradient id="g-sea" cx="42%" cy="38%" r="75%">
+        <stop offset="0%" stop-color="#8ed0cd"/><stop offset="55%" stop-color="#5cabb4"/><stop offset="100%" stop-color="#3d8795"/>
+      </radialGradient>
+      <linearGradient id="g-sand" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0%" stop-color="#f4e0aa"/><stop offset="100%" stop-color="#e0ba76"/>
+      </linearGradient>
+      <radialGradient id="g-land" cx="45%" cy="38%" r="80%">
+        <stop offset="0%" stop-color="#bcd67c"/><stop offset="55%" stop-color="#82b05f"/><stop offset="100%" stop-color="#5d9048"/>
+      </radialGradient>
+      <radialGradient id="g-tree" cx="38%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#86bc60"/><stop offset="100%" stop-color="#4c7d34"/>
+      </radialGradient>
+      <linearGradient id="g-mtn" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#b2a3c8"/><stop offset="100%" stop-color="#796d8f"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- Wspólny pasek górny (mapa / gra / wygrana) -->
+  <header id="topbar" class="hidden">
+    <button id="btn-map" class="icon-button hidden" aria-label="mapo">🏝️</button>
+    <div id="star-counter" aria-label="steloj"><span id="avatar-chip"></span> <span id="star-icon"></span> <span id="star-count">0</span></div>
+    <button id="btn-vortaro" class="icon-button" aria-label="vortaro">📖</button>
+  </header>
+
+  <!-- Ekran startowy -->
+  <section id="start-screen" class="screen">
+    <div class="start-inner">
+      <div id="lang-switch" class="lang-switch"></div>
+      <div id="start-npc" class="start-npc"></div>
+      <h1>Esperanta<br>Aventuro</h1>
+      <button id="btn-start" class="big-button">▶ Ludi!</button>
+    </div>
+  </section>
+
+  <!-- Wielki finał: ukończono wszystkie obecne strefy wyspy -->
+  <section id="island-win-screen" class="screen hidden">
+    <div class="start-inner">
+      <div id="island-win-npcs" class="island-win-npcs"></div>
+      <h2 id="island-win-title">Vi esploris la tutan Esperantion!</h2>
+      <p id="island-win-text" class="island-win-text">Ĉiuj estas dankemaj al vi!<br>Pli da aventuroj venos baldaŭ...</p>
+      <div id="island-win-stars" class="island-win-stars"></div>
+      <button id="btn-island-continue" class="big-button">🏝️ Reen al la mapo</button>
+    </div>
+  </section>
+
+  <!-- Bajka wprowadzająca + kreator postaci -->
+  <section id="story-screen" class="screen hidden">
+    <div class="story-inner">
+      <div id="story-scene" class="story-scene"></div>
+      <p id="story-text" class="story-text"></p>
+      <div id="avatar-grid" class="avatar-grid hidden"></div>
+      <div id="color-grid" class="color-grid hidden"></div>
+      <button id="btn-avatar-ok" class="big-button hidden">✔ Pretas!</button>
+      <button id="btn-story-next" class="big-button">➜</button>
+    </div>
+  </section>
+
+  <!-- Mapa wyspy Esperantio -->
+  <section id="map-screen" class="screen hidden">
+    <div class="map-title-row">
+      <h2 class="map-title">Esperantio</h2>
+      <button id="btn-story-replay" class="icon-button" aria-label="rakonto">📜</button>
+      <button id="btn-voice" class="icon-button" aria-label="voĉo">⚙️</button>
+    </div>
+    <div id="map-canvas" class="map-canvas">
+      <svg id="map-svg" class="map-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <!-- Filtry mapy — te same techniki co portrety, dostrojone do
+               przestrzeni 0–100 (turbulencja liczy się w jednostkach viewBoxa). -->
+          <filter id="m-coast" x="-15%" y="-15%" width="130%" height="130%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="3" seed="4" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="m-mid" x="-15%" y="-15%" width="130%" height="130%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.3" numOctaves="2" seed="7" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="m-fine" x="-15%" y="-15%" width="130%" height="130%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="0.6" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="m-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="3.5" numOctaves="2" seed="3" result="n"/>
+            <feColorMatrix in="n" type="matrix"
+              values="0 0 0 0 0.42  0 0 0 0 0.33  0 0 0 0 0.22  0 0 0 0.09 0"/>
+          </filter>
+          <filter id="m-blotch">
+            <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="9" result="n"/>
+            <feColorMatrix in="n" type="matrix"
+              values="0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0.14 0"/>
+          </filter>
+          <radialGradient id="m-vign" cx="50%" cy="46%" r="72%">
+            <stop offset="70%" stop-color="#5a3d1e" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#5a3d1e" stop-opacity="0.16"/>
+          </radialGradient>
+
+          <!-- Linia brzegowa: rysowana raz, używana jako piasek, płycizna,
+               pierścień fal i luźna kreska tuszu. -->
+          <path id="coast" d="M14,52 Q10,38 20,32 Q18,20 34,20 Q40,8 54,14 Q66,6 76,16 Q90,16 88,30 Q96,40 90,50 Q96,64 86,70 Q88,84 72,84 Q64,94 52,88 Q38,96 30,86 Q14,86 16,72 Q6,64 14,52 Z"/>
+
+        </defs>
+
+        <!-- morze -->
+        <rect width="100" height="100" fill="url(#g-sea)"/>
+        <rect width="100" height="100" filter="url(#m-blotch)" style="mix-blend-mode:multiply"/>
+        <g fill="none" stroke="#dff0ee" stroke-width="0.7" stroke-linecap="round" opacity="0.55" filter="url(#m-mid)">
+          <path d="M6,14 q2.5,-2 5,0 q2.5,2 5,0"/>
+          <path d="M84,8 q2.5,-2 5,0 q2.5,2 5,0"/>
+          <path d="M90,62 q2.5,-2 5,0 q2.5,2 5,0"/>
+          <path d="M5,94 q2.5,-2 5,0 q2.5,2 5,0"/>
+          <path d="M56,97 q2.5,-2 5,0 q2.5,2 5,0"/>
+        </g>
+        <g filter="url(#m-mid)">
+          <path d="M84,88 Q90,93 96,88 L94.5,84 L85.5,84 Z" fill="#b5573e" stroke="#8c4028" stroke-width="0.4"/>
+          <line x1="90" y1="84" x2="90" y2="73" stroke="#6b4226" stroke-width="0.8"/>
+          <path d="M91,73.5 L91,83 L98,82 Z" fill="#fbf0dd" stroke="#dcc39a" stroke-width="0.3"/>
+        </g>
+
+        <!-- wyspa: pierścień fal, płycizna, piasek, tusz, ląd -->
+        <use href="#coast" transform="translate(50,50) scale(1.1) translate(-50,-50)"
+             fill="none" stroke="#bfe3dc" stroke-width="0.8" stroke-dasharray="0.8 6" opacity="0.5" filter="url(#m-coast)"/>
+        <use href="#coast" transform="translate(50,50) scale(1.05) translate(-50,-50)"
+             fill="#aeddd2" opacity="0.55" filter="url(#m-coast)"/>
+        <use href="#coast" fill="url(#g-sand)" stroke="#c9a15c" stroke-width="0.6" stroke-opacity="0.5" filter="url(#m-coast)"/>
+        <use href="#coast" fill="none" stroke="#8a6136" stroke-width="0.55" stroke-opacity="0.45"
+             stroke-dasharray="18 8 30 12 14 9" stroke-linecap="round" filter="url(#m-mid)"/>
+        <path filter="url(#m-coast)" fill="url(#g-land)" stroke="#4e7c38" stroke-width="0.5" stroke-opacity="0.4"
+              d="M17,52 Q14,40 23,34 Q22,24 35,24 Q41,14 54,18 Q64,11 74,19 Q85,19 83,30 Q91,40 85,49 Q90,61 82,67 Q84,78 70,78 Q62,88 52,82 Q40,90 32,82 Q18,82 20,68 Q10,61 17,52 Z"/>
+
+        <!-- plamy terenu -->
+        <path d="M28,58 Q36,53 44,57 Q48,62 42,66 Q33,68 28,64 Q24,61 28,58 Z"
+              fill="#dcc367" opacity="0.8" filter="url(#m-mid)"/>
+        <ellipse cx="58" cy="39" rx="5" ry="3" fill="#7fc4c9" stroke="#bfe3dc" stroke-width="0.5" filter="url(#m-mid)"/>
+        <path d="M66,20 Q76,14 84,21 Q88,28 82,33 Q73,37 67,31 Q62,25 66,20 Z"
+              fill="#54833a" opacity="0.5" filter="url(#m-mid)"/>
+        <path d="M74,60 Q85,54 92,62 Q94,68 86,72 Q76,75 69,69 Q66,63 74,60 Z"
+              fill="#eeda9e" opacity="0.9" filter="url(#m-mid)"/>
+
+        <!-- drogi: wypełniane przez js/map.js (kręta krzywa przez strefy) -->
+        <path id="map-road-bed" class="map-road-bed" fill="none"/>
+        <path id="map-road" class="map-road" fill="none"/>
+
+        <!-- winiety stref: sad, wioska, las, góry, muszelki, zamek -->
+        <g filter="url(#m-fine)">
+          <use href="#m-fruit-tree" transform="translate(16,77)"/>
+          <use href="#m-fruit-tree" transform="translate(23,80) scale(0.8)"/>
+          <use href="#m-fruit-tree" transform="translate(28,75) scale(0.7)"/>
+
+          <use href="#m-house" transform="translate(44,55)"/>
+          <use href="#m-house" transform="translate(52,56) scale(0.85)"/>
+          <use href="#m-house" transform="translate(48,59.5) scale(0.75)"/>
+
+          <use href="#m-tree" transform="translate(70,22)"/>
+          <use href="#m-tree" transform="translate(78,19) scale(0.8)"/>
+          <use href="#m-tree" transform="translate(82,27) scale(0.9)"/>
+          <use href="#m-tree" transform="translate(72,30) scale(0.7)"/>
+          <use href="#m-tree" transform="translate(79,33) scale(0.6)"/>
+          <use href="#m-tree" transform="translate(36,66) scale(0.6)"/>
+          <use href="#m-tree" transform="translate(62,73) scale(0.65)"/>
+        </g>
+
+        <g filter="url(#m-mid)">
+          <path d="M29,37 Q33,24 38,22 Q41,20 44,28 Q46,33 45,37 Q37,40 29,37 Z"
+                fill="url(#g-mtn)" stroke="#655a78" stroke-width="0.4" opacity="0.92"/>
+          <path d="M37,37 Q42,19 48,17 Q52,14 55,25 Q58,31 56,36 Q46,40 37,37 Z"
+                fill="url(#g-mtn)" stroke="#655a78" stroke-width="0.45"/>
+          <path d="M45,22 Q48,17 50,18.5 Q52,19 51.5,23 Q48,21.5 45,22 Z" fill="#f6efe2"/>
+          <path d="M35,26 Q37,22.5 38.6,23.5 Q40,24 39.5,27 Q37,25.5 35,26 Z" fill="#f6efe2" opacity="0.9"/>
+        </g>
+
+        <g filter="url(#m-fine)">
+          <circle cx="76" cy="70" r="0.9" fill="#fdf6e8" stroke="#d9b98a" stroke-width="0.3"/>
+          <circle cx="81" cy="72" r="0.7" fill="#f6dade" stroke="#d9a0aa" stroke-width="0.3"/>
+          <circle cx="87" cy="69" r="0.8" fill="#fdf6e8" stroke="#d9b98a" stroke-width="0.3"/>
+          <path d="M78.5,66.5 l0.6,1.4 1.4,0.6 -1.4,0.6 -0.6,1.4 -0.6,-1.4 -1.4,-0.6 1.4,-0.6 Z" fill="#f2b23d"/>
+        </g>
+
+        <g filter="url(#m-fine)">
+          <rect x="20.5" y="42" width="4" height="10" rx="0.8" fill="#e8dcc4" stroke="#b39a6e" stroke-width="0.4"/>
+          <rect x="29.5" y="42" width="4" height="10" rx="0.8" fill="#e8dcc4" stroke="#b39a6e" stroke-width="0.4"/>
+          <rect x="23.5" y="46" width="7" height="6.5" fill="#ddcdaf" stroke="#b39a6e" stroke-width="0.4"/>
+          <path d="M19.5,42.5 L22.5,36.5 L25.5,42.5 Z" fill="#b5573e" stroke="#8c4028" stroke-width="0.35"/>
+          <path d="M28.5,42.5 L31.5,36.5 L34.5,42.5 Z" fill="#b5573e" stroke="#8c4028" stroke-width="0.35"/>
+          <line x1="22.5" y1="36.5" x2="22.5" y2="33" stroke="#6b4226" stroke-width="0.5"/>
+          <path d="M22.5,33 L26,34.2 L22.5,35.4 Z" fill="#e8722e"/>
+          <rect x="25.7" y="49" width="2.6" height="3.5" rx="1" fill="#6b4226"/>
+        </g>
+
+        <!-- chmury -->
+        <g fill="#ffffff" filter="url(#m-mid)">
+          <g opacity="0.85"><ellipse cx="14" cy="9" rx="8" ry="3"/><ellipse cx="20" cy="7" rx="5" ry="2.5"/></g>
+          <g opacity="0.7"><ellipse cx="87" cy="45" rx="6" ry="2.4"/><ellipse cx="92" cy="43.5" rx="3.6" ry="1.9"/></g>
+        </g>
+
+        <!-- winieta + ziarno papieru -->
+        <rect width="100" height="100" fill="url(#m-vign)"/>
+        <rect width="100" height="100" filter="url(#m-grain)" style="mix-blend-mode:multiply"/>
+      </svg>
+      <div id="map-markers" class="map-markers"></div>
+      <div id="map-avatar" class="map-avatar"><span id="map-avatar-art"></span></div>
+    </div>
+  </section>
+
+  <!-- Główny ekran gry -->
+  <section id="game-screen" class="screen hidden">
+    <!-- Malowane tło strefy (za sceną) — wypełniane przez game.js -->
+    <div id="zone-bg" class="zone-bg" aria-hidden="true"></div>
+    <div id="stage">
+      <div id="npc-area">
+        <div id="npc" class="npc"></div>
+        <div id="bubble" class="bubble">
+          <span id="instruction"></span>
+          <button id="btn-speak" class="speak-button" aria-label="ripeti">🔊</button>
+        </div>
+      </div>
+
+      <div id="objects" class="objects"></div>
+
+      <!-- Słowo-umiejętność strefy: ❓ dopóki nieznane, potem emoji akcji -->
+      <button id="btn-skill" class="skill-spot hidden" aria-label="speciala ago"></button>
+
+      <!-- Duszek ręki: demonstracja pierwszego zadania każdego typu -->
+      <div id="ghost-hand" class="ghost-hand hidden" aria-hidden="true">👆</div>
+    </div>
+
+    <div id="reward-toast" class="reward-toast hidden">
+      <span id="reward-emoji"></span>
+      <span id="reward-word"></span>
+    </div>
+  </section>
+
+  <!-- Ekran końcowy strefy -->
+  <section id="win-screen" class="screen hidden">
+    <div class="start-inner">
+      <div id="win-npc" class="win-npc-row"></div>
+      <h2 id="win-title">Bonege!</h2>
+      <p id="win-text">Vi trovis ĉiujn fruktojn!</p>
+      <div id="win-stars"></div>
+      <div class="win-buttons">
+        <button id="btn-map-win" class="big-button">🏝️ Mapo</button>
+        <button id="btn-replay" class="big-button secondary">🔄 Denove</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wybór głosu lektora (ekran dla rodzica) -->
+  <section id="voice-screen" class="screen overlay hidden">
+    <div class="vortaro-box">
+      <h2 id="voice-title">Głos lektora</h2>
+      <p id="voice-hint-1" class="voice-hint">Stuknij głos, aby posłuchać próbki. Wybór zostanie zapamiętany.</p>
+      <div id="voice-list" class="voice-list"></div>
+
+      <div id="tricky-words-section">
+        <p id="voice-hint-2" class="voice-hint">Trudne słówka — testuj pojedynczo:</p>
+        <div id="tricky-words" class="tricky-list"></div>
+      </div>
+
+      <div id="voice-log" class="voice-log hidden"></div>
+
+      <button id="btn-toggle-diagnostics" class="link-button">🔧 Szczegóły techniczne</button>
+      <div id="voice-diagnostics" class="voice-diagnostics hidden"></div>
+
+      <button id="btn-close-voice" class="big-button">✖ Zamknij</button>
+    </div>
+  </section>
+
+  <!-- Vortaro (album słówek) -->
+  <section id="vortaro-screen" class="screen overlay hidden">
+    <div class="vortaro-box">
+      <h2 id="vortaro-title">Mia Vortaro</h2>
+      <div id="vortaro-grid" class="vortaro-grid"></div>
+      <button id="btn-close-vortaro" class="big-button">✖ Fermi</button>
+    </div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

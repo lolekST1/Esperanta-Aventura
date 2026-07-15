@@ -1,0 +1,1030 @@
+/* Esperanta Aventuro — mobile-first, duże cele dotykowe, zero bałaganu */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+body {
+  background: linear-gradient(180deg, #aee7ff 0%, #d9f7c9 55%, #7ec850 100%);
+}
+
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  /* Treść wyśrodkowana przez margin:auto na .start-inner potrafi być
+     wyższa niż realnie widoczna wysokość telefonu (pasek adresu,
+     zakładki, nawigacja systemowa zjadają dużo miejsca) — bez tego
+     góra treści chowała się POD paskiem #topbar, a dolny przycisk był
+     ucięty poza ekranem, bez możliwości przewinięcia do niego. */
+  overflow-y: auto;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- Ekran startowy / końcowy ---------- */
+
+.start-inner {
+  margin: auto;
+  text-align: center;
+  padding: 24px;
+}
+
+.start-npc {
+  width: clamp(120px, 38vw, 200px);
+  margin: 0 auto;
+  animation: bounce 1.6s ease-in-out infinite;
+}
+
+.start-npc svg { width: 100%; height: auto; display: block; }
+
+/* Przełącznik wersji językowej gry (eo/pl/en) — ekran startowy */
+.lang-switch {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lang-button {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffffcc;
+  color: #4a3b2a;
+  cursor: pointer;
+}
+
+.lang-button.active {
+  background: #ff9f1c;
+  color: #fff;
+}
+
+/* Rząd "awatar 🎉 NPC" na ekranie wygranej strefy */
+.win-npc-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: clamp(36px, 10vw, 56px); /* rozmiar 🎉 między portretami */
+}
+
+.win-npc-row svg {
+  width: clamp(84px, 24vw, 130px);
+  height: auto;
+  animation: bounce 1.6s ease-in-out infinite;
+}
+
+.win-npc-row svg:last-child { animation-delay: 0.3s; }
+
+h1, h2 {
+  color: #2c5e1a;
+  font-size: clamp(32px, 9vw, 56px);
+  margin: 16px 0 32px;
+  text-shadow: 0 2px 0 #ffffffaa;
+}
+
+#win-text {
+  font-size: clamp(20px, 6vw, 32px);
+  color: #2c5e1a;
+  margin-bottom: 16px;
+}
+
+#win-stars {
+  font-size: clamp(28px, 8vw, 44px);
+  margin-bottom: 32px;
+}
+
+.big-button {
+  font-family: inherit;
+  font-size: clamp(24px, 7vw, 36px);
+  padding: 20px 44px;
+  min-height: 72px;
+  min-width: 200px;
+  border: none;
+  border-radius: 999px;
+  background: #ff9f1c;
+  color: #fff;
+  box-shadow: 0 6px 0 #d97e00;
+  cursor: pointer;
+}
+
+.big-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #d97e00;
+}
+
+.big-button.secondary {
+  background: #4dabf7;
+  box-shadow: 0 6px 0 #1c7ed6;
+}
+
+.big-button.secondary:active { box-shadow: 0 2px 0 #1c7ed6; }
+
+.win-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+.island-win-npcs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  /* Liczba NPC rośnie z każdą nową strefą (Faza 4 doda kolejne) — bez
+     zawijania rząd uciekał poza szerokość wąskich telefonów, bez
+     możliwości przewinięcia w poziomie (patrz overflow-y na .screen). */
+  font-size: clamp(40px, 14vw, 80px);
+}
+
+.island-win-npcs span { animation: bounce 1.6s ease-in-out infinite; display: inline-block; }
+
+.island-win-npcs span svg {
+  width: clamp(44px, 13vw, 76px);
+  height: auto;
+  display: block;
+}
+.island-win-npcs span:nth-child(2) { animation-delay: 0.2s; }
+.island-win-npcs span:nth-child(3) { animation-delay: 0.4s; }
+.island-win-npcs span:nth-child(4) { animation-delay: 0.6s; }
+
+.island-win-text {
+  font-size: clamp(18px, 5vw, 26px);
+  color: #2c5e1a;
+  line-height: 1.5;
+  margin: 16px 0;
+}
+
+.island-win-stars {
+  font-size: clamp(24px, 7vw, 36px);
+  margin-bottom: 24px;
+}
+
+/* Te dwa ekrany pokazują #topbar (na start-screen/story-screen jest
+   ukryty) — odsuwamy treść, żeby jej góra nie chowała się pod paskiem. */
+#win-screen, #island-win-screen {
+  padding-top: 88px;
+}
+
+/* ---------- Pasek górny (wspólny dla mapy i gry) ---------- */
+
+#topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  z-index: 5;
+}
+
+#star-counter {
+  font-size: 28px;
+  background: #ffffffcc;
+  border-radius: 999px;
+  padding: 8px 20px;
+  color: #b8860b;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#avatar-chip svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+}
+
+#star-icon svg { display: block; }
+
+.icon-button {
+  font-size: 30px;
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: #ffffffcc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button svg { display: block; }
+
+/* Ikony wewnątrz dużych przycisków i nagłówków — wyrównane do tekstu */
+.big-button svg,
+.vortaro-box h2 svg {
+  vertical-align: -0.16em;
+}
+
+.speak-button svg { display: block; margin: 0 auto; }
+
+#win-stars svg { margin: 0 2px; }
+
+.win-party svg { display: block; }
+
+/* ---------- Bajka wprowadzająca ---------- */
+
+.story-inner {
+  margin: auto;
+  text-align: center;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: min(92vw, 480px);
+}
+
+.story-scene {
+  width: clamp(160px, 48vw, 240px);
+  padding: 10px;
+  border-radius: 28px;
+  background: radial-gradient(120% 130% at 35% 25%, #fdf3df, #f0dcb0 65%, #dfc188);
+  box-shadow: 0 8px 22px #5a3d1e33;
+  animation: floaty 2.4s ease-in-out infinite;
+}
+
+.story-scene svg { width: 100%; height: auto; display: block; }
+
+.story-text {
+  font-size: clamp(22px, 6vw, 32px);
+  color: #2c5e1a;
+  background: #ffffffcc;
+  border-radius: 24px;
+  padding: 16px 24px;
+  min-height: 2.6em;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+.avatar-option {
+  border: none;
+  border-radius: 24px;
+  background: #ffffffd0;
+  box-shadow: 0 5px 0 #00000018;
+  padding: 8px;
+  min-height: 84px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.avatar-option svg { width: 100%; height: auto; display: block; }
+
+.avatar-option:active { transform: scale(0.9); }
+
+/* Kropki wyboru koloru włosów/sierści — duże cele, aktywna z obwódką */
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.color-dot {
+  width: 58px;
+  height: 58px;
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 4px 0 #00000022;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.color-dot:active { transform: scale(0.88); }
+
+.color-dot.active {
+  border-color: #2c5e1a;
+  transform: scale(1.12);
+}
+
+/* ---------- Mapa wyspy ---------- */
+
+#map-screen {
+  padding: 96px 20px 24px;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.map-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.map-title {
+  margin: 0;
+  font-size: clamp(30px, 8vw, 44px);
+}
+
+.map-canvas {
+  position: relative;
+  width: min(92vw, 480px);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px #5a3d1e33, 0 14px 34px #5a3d1e2e;
+}
+
+.map-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Droga: jaśniejszy "nasyp" pod spodem + kropkowany trakt na wierzchu */
+.map-road-bed {
+  stroke: #caa15c;
+  stroke-opacity: 0.55;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.map-road {
+  stroke: #f9ecc4;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 3.4;
+}
+
+.map-markers {
+  position: absolute;
+  inset: 0;
+}
+
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -78%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 64px;
+}
+
+/* Znacznik strefy: portret NPC w pergaminowym kółku — kto tu mieszka;
+   samo miejsce (sad, zamek, góry...) jest namalowane na wyspie pod spodem. */
+.map-marker-face {
+  position: relative;
+  width: clamp(52px, 14vw, 64px);
+  height: clamp(52px, 14vw, 64px);
+  background: #fff8e8e6;
+  border: 2px solid #e3cf9f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  box-shadow: 0 5px 0 #00000018;
+}
+
+.map-marker-face > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.map-marker-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #2c5e1a;
+  background: #ffffffcc;
+  padding: 1px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.map-marker-status {
+  font-size: 12px;
+  font-weight: bold;
+  color: #b8860b;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 15px;
+}
+
+.map-marker-status svg { display: block; }
+
+.status-num { line-height: 1; }
+
+.map-marker.locked .map-marker-face {
+  filter: grayscale(0.9);
+  opacity: 0.65;
+}
+
+.map-marker.wobble { animation: wobble 0.5s ease; }
+
+.map-marker.new .map-marker-face { animation: invite-pulse 1.8s ease-in-out infinite; }
+
+/* Sekret (akcja-słowo) gotowy do odkrycia: gwiazdki skrzące się dookoła znacznika. */
+.marker-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spark {
+  position: absolute;
+  opacity: 0;
+  animation: twinkle 1.6s ease-in-out infinite;
+}
+
+.spark svg { display: block; }
+
+.spark-1 { top: -8px; left: -10px; animation-delay: 0s; }
+.spark-2 { top: -10px; right: -8px; animation-delay: 0.4s; }
+.spark-3 { bottom: -6px; left: -8px; animation-delay: 0.8s; }
+.spark-4 { bottom: -8px; right: -10px; animation-delay: 1.2s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(20deg); }
+}
+
+.map-avatar {
+  position: absolute;
+  transform: translate(-50%, -82%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.map-avatar #map-avatar-art {
+  display: block;
+  width: clamp(40px, 11vw, 52px);
+  filter: drop-shadow(0 3px 2px #00000055);
+}
+
+.map-avatar #map-avatar-art svg { width: 100%; height: auto; display: block; }
+
+.map-avatar.walking #map-avatar-art { animation: avatar-bob 0.3s ease-in-out infinite; }
+
+/* Awatar czeka niewidoczny, aż balon wyląduje */
+.map-avatar.landing { opacity: 0; }
+
+/* Przylot balonem po bajce wprowadzającej */
+.balloon-arrival {
+  position: absolute;
+  width: clamp(64px, 18%, 92px);
+  transform: translate(-50%, -88%);
+  transition: top 2.7s cubic-bezier(0.4, 0.1, 0.5, 1), opacity 0.7s ease;
+  z-index: 4;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 4px #00000044);
+}
+
+.balloon-arrival svg { width: 100%; height: auto; display: block; }
+
+.balloon-arrival.gone { opacity: 0; }
+
+/* ---------- Scena ---------- */
+
+#game-screen { padding-top: 88px; }
+
+/* Malowane tło strefy — pod sceną, nigdy nie łapie dotyku */
+.zone-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.zone-bg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: 8px 16px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+#npc-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 560px;
+}
+
+.npc {
+  width: clamp(88px, 24vw, 140px);
+  flex-shrink: 0;
+  transition: transform 0.3s;
+}
+
+.npc svg { width: 100%; height: auto; display: block; }
+
+.npc.happy { animation: bounce 0.5s ease-in-out 3; }
+.npc.dance { animation: dance 0.55s ease-in-out infinite; }
+.npc.enter { animation: enter 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.npc.thinking { transform: rotate(-8deg); }
+
+.bubble {
+  position: relative;
+  background: #fff;
+  border-radius: 24px;
+  padding: 16px 20px;
+  font-size: clamp(22px, 6vw, 32px);
+  color: #333;
+  box-shadow: 0 4px 12px #00000022;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 10px solid transparent;
+  border-right-color: #fff;
+}
+
+.speak-button {
+  font-size: 26px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: #e8f4ff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---------- Obiekty do stuknięcia ---------- */
+
+.objects {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.object-button {
+  position: relative;
+  font-size: clamp(64px, 22vw, 130px);
+  width: clamp(96px, 28vw, 170px);
+  height: clamp(96px, 28vw, 170px);
+  border: none;
+  border-radius: 28px;
+  background: #ffffffb0;
+  box-shadow: 0 6px 0 #00000018;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+
+.object-button:active { transform: scale(0.92); }
+.object-button.correct { animation: pop 0.6s ease; background: #c9f7c9; }
+.object-button.wrong { animation: wobble 0.5s ease; }
+
+.obj-emoji { display: inline-block; }
+
+/* Ikony obiektów: SVG skaluje się przez font-size (1em = dawny rozmiar
+   emoji), więc mechanika granda/malgranda (obj.scale) działa bez zmian. */
+.obj-emoji svg,
+.obj-badge svg,
+.skill-spot svg,
+.skill-scene svg,
+#reward-emoji svg {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.1em;
+}
+
+.skill-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.06em;
+}
+
+.vortaro-item .emoji svg {
+  width: 44px;
+  height: 44px;
+  display: block;
+  margin: 0 auto 6px;
+}
+
+.falling-star svg { display: block; }
+.obj-emoji.anim-jump { animation: hop 1s ease-in-out infinite; }
+.obj-emoji.anim-fly { animation: floaty 1.8s ease-in-out infinite; }
+
+.obj-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.35em;
+}
+
+/* ---------- Zadania "Donu..." (przeciąganie na NPC) ---------- */
+
+.object-button.dragging {
+  transition: none; /* transform podąża za palcem bez opóźnienia */
+  z-index: 8;
+  box-shadow: 0 14px 28px #00000033;
+}
+
+.object-button.snap-back { transition: transform 0.35s ease; }
+
+/* wręczony obiekt znika w łapkach NPC */
+.object-button.given { transition: transform 0.45s ease-in, opacity 0.45s ease-in; }
+
+.npc.drop-target { filter: drop-shadow(0 0 12px #ffd76a); }
+.npc.drop-hot { transform: scale(1.18); }
+
+/* ---------- Zadania "Unue... poste..." (sekwencje) ---------- */
+
+.object-button.seq-done {
+  background: #c9f7c9;
+  box-shadow: 0 6px 0 #7ec85088;
+}
+
+.seq-num {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #2c5e1a;
+  color: #fff;
+  font-size: 17px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #00000022;
+}
+
+/* ---------- Zadania "Memoru..." (kaŝludo — chmurki zakrywają obiekty) ---------- */
+
+.cloud-lid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* pełne tło — obiekt pod spodem ma być NAPRAWDĘ schowany,
+     nie może wystawać zza samej chmurki */
+  background: #e3edf8;
+  border-radius: 28px;
+  z-index: 2;
+  pointer-events: none; /* stuknięcie trafia w przycisk pod chmurką */
+  animation: cloud-in 0.55s ease;
+  transition: transform 0.45s ease, opacity 0.45s ease;
+}
+
+.cloud-lid svg {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+/* Odsłonięcie: chmurka odpływa w górę i znika */
+.cloud-lid.lift {
+  transform: translateY(-55%) scale(1.15);
+  opacity: 0;
+}
+
+@keyframes cloud-in {
+  from { opacity: 0; transform: translateY(-45%) scale(0.7); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Słowa jako umiejętności (akcja strefy) ---------- */
+
+.skill-spot {
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 50%;
+  background: #fff3c4;
+  font-size: 34px;
+  box-shadow: 0 5px 0 #00000022;
+  cursor: pointer;
+  z-index: 6;
+  animation: invite-pulse 1.8s ease-in-out infinite;
+}
+
+.skill-spot.locked {
+  animation: none;
+  background: #ffffff90;
+  filter: grayscale(0.6);
+  opacity: 0.75;
+}
+
+.skill-scene {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: clamp(72px, 26vw, 150px);
+  text-align: center;
+  transition: transform 0.15s;
+}
+
+.skill-scene:active { transform: scale(0.92); }
+
+.skill-scene.transform { animation: pop 0.6s ease; }
+
+/* ---------- Duszek ręki (demonstracja pierwszego zadania każdego typu) ---------- */
+
+.ghost-hand {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 15;
+  transition: left 0.6s ease, top 0.6s ease, opacity 0.3s ease;
+  filter: drop-shadow(0 4px 6px #00000055);
+}
+
+.ghost-hand svg { width: 100%; height: 100%; display: block; }
+
+.ghost-hand.hidden { display: none; }
+.ghost-hand.visible { opacity: 0.85; }
+
+.ghost-hand.tap { animation: hint-tap 0.4s ease; }
+
+@keyframes hint-tap {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  40% { transform: translate(-50%, -50%) scale(0.7); }
+}
+
+/* ---------- Nagroda ---------- */
+
+.reward-toast {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 32px;
+  padding: 24px 40px;
+  font-size: clamp(28px, 8vw, 44px);
+  color: #2c5e1a;
+  box-shadow: 0 8px 30px #00000033;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: pop 0.5s ease;
+  z-index: 10;
+}
+
+#reward-emoji { font-size: 1.4em; }
+
+/* Spadające gwiazdki */
+.falling-star {
+  position: fixed;
+  top: -50px;
+  font-size: 36px;
+  animation: fall 1.4s linear forwards;
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* ---------- Vortaro ---------- */
+
+.overlay {
+  background: #00000088;
+  z-index: 20;
+  /* Przeglądarki mobilne zajmują pasek adresu/zakładek/nawigacji —
+     "100vh" bywa wyższe niż to, co faktycznie widać. Cały ekran
+     przewija się jako JEDNA całość zamiast wielu małych, ciasnych
+     przewijanych pudełek w środku. */
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.vortaro-box {
+  margin: auto;
+  background: #fffef2;
+  border-radius: 28px;
+  padding: 24px;
+  width: min(92vw, 480px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+}
+
+.vortaro-box h2 { margin: 0; font-size: 30px; }
+
+.vortaro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px;
+}
+
+.vortaro-item {
+  border: none;
+  background: #eaf7e0;
+  border-radius: 20px;
+  padding: 12px 6px;
+  font-family: inherit;
+  font-size: 18px;
+  color: #2c5e1a;
+  cursor: pointer;
+  min-height: 96px;
+}
+
+.vortaro-item .emoji { display: block; font-size: 44px; margin-bottom: 6px; }
+
+.vortaro-empty { color: #999; font-size: 20px; }
+
+/* ---------- Wybór głosu lektora ---------- */
+
+.voice-hint {
+  color: #666;
+  font-size: 17px;
+  margin: 0;
+}
+
+.voice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tricky-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: #4dabf7;
+  font-family: inherit;
+  font-size: 15px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+  align-self: center;
+}
+
+.voice-item {
+  border: 3px solid transparent;
+  border-radius: 18px;
+  background: #eef4ff;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 18px;
+  color: #234;
+  cursor: pointer;
+  text-align: left;
+  min-height: 56px;
+}
+
+.voice-item-sub {
+  font-size: 14px;
+  color: #667;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+.tricky-item {
+  border: none;
+  border-radius: 14px;
+  background: #fff3e0;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  color: #234;
+  cursor: pointer;
+  text-align: left;
+  min-height: 40px;
+}
+
+.tricky-item:active { transform: scale(0.98); }
+
+.voice-item.active {
+  border-color: #4dabf7;
+  background: #dcecff;
+  font-weight: bold;
+}
+
+.voice-diagnostics {
+  background: #f4f4f4;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  text-align: left;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+.voice-log {
+  background: #1e1e1e;
+  color: #7fffa0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 13px;
+  text-align: left;
+}
+
+.voice-log-line { padding: 2px 0; word-break: break-word; }
+
+/* ---------- Animacje ---------- */
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px) rotate(-4deg); }
+  75% { transform: translateX(10px) rotate(4deg); }
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(360deg); opacity: 0.7; }
+}
+
+@keyframes dance {
+  0%, 100% { transform: rotate(-10deg) scale(1.05); }
+  50% { transform: rotate(10deg) scale(1.12); }
+}
+
+@keyframes enter {
+  0% { transform: translateY(60vh) scale(0.3); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes invite-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 5px 0 #00000018, 0 0 0 0 #ffd76a99; }
+  50% { transform: scale(1.08); box-shadow: 0 5px 0 #00000018, 0 0 0 8px #ffd76a00; }
+}
+
+@keyframes avatar-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-9px) scale(1.06); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-22px); }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-16px) rotate(6deg); }
+}
